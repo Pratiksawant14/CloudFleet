@@ -14,8 +14,26 @@ import { Logger } from '../utils/logger.js';
 export interface IStorageProvider {
   getObject<T>(key: string): Promise<T | null>;
   putObject(key: string, data: unknown): Promise<void>;
+  getBuffer(key: string): Promise<{ buffer: Buffer; contentType?: string } | null>;
+  putBuffer(key: string, buffer: Buffer, contentType?: string): Promise<void>;
   listObjects(prefix: string): Promise<string[]>;
   deleteObject(key: string): Promise<void>;
+}
+
+export function getMimeType(filename: string): string {
+  const ext = path.extname(filename).toLowerCase();
+  switch (ext) {
+    case '.png': return 'image/png';
+    case '.jpg':
+    case '.jpeg': return 'image/jpeg';
+    case '.webp': return 'image/webp';
+    case '.gif': return 'image/gif';
+    case '.svg': return 'image/svg+xml';
+    case '.mp4': return 'video/mp4';
+    case '.webm': return 'video/webm';
+    case '.json': return 'application/json';
+    default: return 'application/octet-stream';
+  }
 }
 
 export class S3StorageProvider implements IStorageProvider {
@@ -44,6 +62,49 @@ export class S3StorageProvider implements IStorageProvider {
         return null;
       }
       Logger.error('S3_GET_ERROR', `Failed to get object: ${key}`, {
+        details: { error: String(err) },
+      });
+      throw err;
+    }
+  }
+
+  async getBuffer(key: string): Promise<{ buffer: Buffer; contentType?: string } | null> {
+    try {
+      const response = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        })
+      );
+      if (!response.Body) return null;
+      const bytes = await response.Body.transformToByteArray();
+      return {
+        buffer: Buffer.from(bytes),
+        contentType: response.ContentType || getMimeType(key),
+      };
+    } catch (err: unknown) {
+      if ((err as { name?: string }).name === 'NoSuchKey' || (err as NoSuchKey).name === 'NoSuchKey') {
+        return null;
+      }
+      Logger.error('S3_GET_BUFFER_ERROR', `Failed to get buffer: ${key}`, {
+        details: { error: String(err) },
+      });
+      throw err;
+    }
+  }
+
+  async putBuffer(key: string, buffer: Buffer, contentType?: string): Promise<void> {
+    try {
+      await this.client.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+          Body: buffer,
+          ContentType: contentType || getMimeType(key),
+        })
+      );
+    } catch (err: unknown) {
+      Logger.error('S3_PUT_BUFFER_ERROR', `Failed to put buffer: ${key}`, {
         details: { error: String(err) },
       });
       throw err;
@@ -156,6 +217,29 @@ export class LocalStorageProvider implements IStorageProvider {
     }
     const content = JSON.stringify(data, null, 2);
     fs.writeFileSync(fullPath, content, 'utf8');
+  }
+
+  async getBuffer(key: string): Promise<{ buffer: Buffer; contentType?: string } | null> {
+    const fullPath = this.resolvePath(key);
+    if (!fs.existsSync(fullPath)) return null;
+    try {
+      const buffer = fs.readFileSync(fullPath);
+      return {
+        buffer,
+        contentType: getMimeType(fullPath),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async putBuffer(key: string, buffer: Buffer, _contentType?: string): Promise<void> {
+    const fullPath = this.resolvePath(key);
+    const dir = path.dirname(fullPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(fullPath, buffer);
   }
 
   async listObjects(prefix: string): Promise<string[]> {

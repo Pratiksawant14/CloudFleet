@@ -3,13 +3,15 @@ import cors from 'cors';
 import { KioskService } from './services/kioskService.js';
 import { CampaignService } from './services/campaignService.js';
 import { SyncService } from './services/syncService.js';
+import { AssetService } from './services/assetService.js';
 import { Logger } from './utils/logger.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Request logger
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -131,10 +133,47 @@ app.get('/campaigns/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Real S3 Binary Asset Management
+app.post('/assets/upload', async (req: Request, res: Response) => {
+  try {
+    const { filename, fileData, mediaType } = req.body;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const result = await AssetService.uploadAsset({
+      filename,
+      fileData,
+      mediaType,
+      baseUrl,
+    });
+    res.status(201).json(result);
+  } catch (err: unknown) {
+    res.status(400).json({ error: { message: (err as Error).message } });
+  }
+});
+
+app.get('/assets/:filename', async (req: Request, res: Response) => {
+  try {
+    const asset = await AssetService.getAsset(req.params.filename);
+    if (!asset) {
+      res.status(404).json({ error: { message: `Asset '${req.params.filename}' not found in S3 storage.` } });
+      return;
+    }
+    res.setHeader('Content-Type', asset.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(asset.buffer);
+  } catch (err: unknown) {
+    res.status(500).json({ error: { message: (err as Error).message } });
+  }
+});
+
 // Start listening
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     Logger.info('SERVER_START', `CloudFleet Kiosk API listening on http://localhost:${PORT}`);
+    try {
+      await CampaignService.ensureDefaultCampaign();
+    } catch (err) {
+      Logger.warn('INIT_CAMPAIGN_WARNING', `Could not initialize default campaign: ${(err as Error).message}`);
+    }
   });
 }
 

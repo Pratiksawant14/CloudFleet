@@ -41,6 +41,8 @@ export interface KioskState {
     version: string;
     headline: string;
     themeColor?: string;
+    description?: string;
+    assets?: CampaignAsset[];
   };
   localCache: {
     totalAssetsCached: number;

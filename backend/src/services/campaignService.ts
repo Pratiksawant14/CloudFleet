@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { getStorageProvider } from './storage.js';
 import { CampaignManifest } from '../types/index.js';
 import { Logger } from '../utils/logger.js';
+import { AssetService } from './assetService.js';
 
 export class CampaignService {
   private static DEFAULT_CAMPAIGN: CampaignManifest = {
@@ -14,10 +15,10 @@ export class CampaignService {
     assets: [
       {
         assetId: 'ast_welcome_banner',
-        filename: 'welcome_banner.png',
+        filename: 'welcome_screen_ad.svg',
         mediaType: 'IMAGE',
-        sizeBytes: 1540000,
-        url: 'https://cloudfleet-assets.s3.amazonaws.com/banners/welcome.png',
+        sizeBytes: 154000,
+        url: 'http://localhost:4000/assets/welcome_screen_ad.svg',
         checksum: 'sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
       },
     ],
@@ -28,6 +29,10 @@ export class CampaignService {
   };
 
   static async ensureDefaultCampaign(): Promise<void> {
+    try {
+      await AssetService.seedDefaultAssets();
+    } catch {}
+
     const storage = getStorageProvider();
     const manifestKey = `campaigns/${this.DEFAULT_CAMPAIGN.campaignId}/manifest.json`;
     const existing = await storage.getObject<CampaignManifest>(manifestKey);

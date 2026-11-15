@@ -1,9 +1,11 @@
 import React from 'react';
-import { MonitorPlay, RefreshCw, Plus, Terminal, UploadCloud } from 'lucide-react';
+import { MonitorPlay, RefreshCw, Plus, Terminal, UploadCloud, Monitor, LayoutDashboard } from 'lucide-react';
 import { ApiService } from '../services/api';
 
 interface HeaderProps {
   backendConnected: boolean;
+  activeView: 'OPERATIONS' | 'SCREEN_SIMULATOR';
+  onViewChange: (view: 'OPERATIONS' | 'SCREEN_SIMULATOR') => void;
   onRefresh: () => void;
   onOpenCampaignModal: () => void;
   onOpenRegisterModal: () => void;
@@ -12,6 +14,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   backendConnected,
+  activeView,
+  onViewChange,
   onRefresh,
   onOpenCampaignModal,
   onOpenRegisterModal,
@@ -27,6 +31,60 @@ export const Header: React.FC<HeaderProps> = ({
           <h1 className="brand-title">CloudFleet</h1>
           <span className="brand-subtitle">Serverless Edge Kiosk & Signage Fleet</span>
         </div>
+      </div>
+
+      {/* Navigation View Switcher (Dashboard vs Screen Simulator) */}
+      <div
+        style={{
+          display: 'flex',
+          backgroundColor: 'rgba(15, 23, 42, 0.8)',
+          padding: '0.25rem',
+          borderRadius: '8px',
+          border: '1px solid var(--border-subtle)',
+          gap: '0.25rem',
+        }}
+      >
+        <button
+          onClick={() => onViewChange('OPERATIONS')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.35rem 0.85rem',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            backgroundColor: activeView === 'OPERATIONS' ? '#2563eb' : 'transparent',
+            color: activeView === 'OPERATIONS' ? '#ffffff' : 'var(--text-secondary)',
+            border: 'none',
+          }}
+        >
+          <LayoutDashboard size={14} />
+          <span>Fleet Ops Center</span>
+        </button>
+
+        <button
+          onClick={() => onViewChange('SCREEN_SIMULATOR')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.35rem 0.85rem',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            backgroundColor: activeView === 'SCREEN_SIMULATOR' ? '#7c3aed' : 'transparent',
+            color: activeView === 'SCREEN_SIMULATOR' ? '#ffffff' : 'var(--text-secondary)',
+            border: 'none',
+          }}
+        >
+          <Monitor size={14} />
+          <span>Live Kiosk Screen Simulator</span>
+        </button>
       </div>
 
       <div className="header-actions">

@@ -163,10 +163,37 @@ export const KioskDetail: React.FC<KioskDetailProps> = ({ kioskId, onBack, onSho
                     lineHeight: 1.3,
                     color: '#ffffff',
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    marginBottom: '0.75rem',
                   }}
                 >
                   {campaign.headline}
                 </h1>
+
+                {/* Real Asset Media Render */}
+                {campaign.assets && campaign.assets.length > 0 && campaign.assets[0].url && (
+                  <div style={{ margin: '0.75rem 0', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    {campaign.assets[0].mediaType === 'VIDEO' ? (
+                      <video
+                        src={campaign.assets[0].url}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        style={{ width: '100%', maxHeight: '200px', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <img
+                        src={campaign.assets[0].url}
+                        alt={campaign.headline}
+                        style={{ width: '100%', maxHeight: '200px', objectFit: 'contain', backgroundColor: 'rgba(0,0,0,0.4)' }}
+                        onError={(e) => {
+                          // Fallback if local asset not served yet
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
 
               <div

@@ -60,6 +60,16 @@ export class KioskService {
         version: '1.0.0',
         headline: 'Welcome to Our Store - Discover Latest Arrivals',
         themeColor: '#3b82f6',
+        assets: [
+          {
+            assetId: 'ast_welcome_default',
+            filename: 'welcome_screen_ad.svg',
+            mediaType: 'IMAGE',
+            sizeBytes: 154000,
+            url: 'http://localhost:4000/assets/welcome_screen_ad.svg',
+            checksum: 'sha256-default',
+          },
+        ],
       },
       localCache: {
         totalAssetsCached: 1,

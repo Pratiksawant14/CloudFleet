@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 export interface SimulatedKioskConfig {
   kioskId: string;
   name: string;
@@ -14,6 +17,7 @@ export interface LocalActiveCampaign {
   version: string;
   headline: string;
   themeColor: string;
+  assets?: Array<{ filename: string; sizeBytes: number; url: string; mediaType?: string }>;
 }
 
 export class SimulatedKiosk {
@@ -25,6 +29,7 @@ export class SimulatedKiosk {
 
   private isRunning: boolean = false;
   private isDisconnected: boolean = false;
+  private isUpdating: boolean = false;
   private updateCheckIntervalMs: number;
   private heartbeatIntervalMs: number;
 
@@ -152,7 +157,8 @@ export class SimulatedKiosk {
   }
 
   public async checkForCloudUpdates(): Promise<boolean> {
-    if (!this.isRunning || this.isDisconnected) return false;
+    if (!this.isRunning || this.isDisconnected || this.isUpdating) return false;
+    this.isUpdating = true;
 
     try {
       console.log(`[${this.kioskId}] Checking Cloud API for updates (Current Local Version: v${this.activeCampaign.version})...`);
@@ -184,9 +190,31 @@ export class SimulatedKiosk {
         console.log(`[${this.kioskId}] Pulling ${camp.assets.length} media asset(s) from S3 into local disk cache...`);
 
         const downloadStart = Date.now();
-        // Simulate asset download latency from Amazon S3
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        const downloadDurationMs = Date.now() - downloadStart;
+        let totalRealBytes = 0;
+        const cacheDir = path.resolve(process.cwd(), '.kiosk-cache', this.kioskId);
+        if (!fs.existsSync(cacheDir)) {
+          fs.mkdirSync(cacheDir, { recursive: true });
+        }
+
+        for (const asset of camp.assets) {
+          try {
+            console.log(`[${this.kioskId}] -> Downloading ${asset.filename} from S3 (${asset.url})...`);
+            const assetRes = await fetch(asset.url);
+            if (assetRes.ok) {
+              const arrayBuf = await assetRes.arrayBuffer();
+              const destFile = path.join(cacheDir, asset.filename);
+              fs.writeFileSync(destFile, Buffer.from(arrayBuf));
+              const stat = fs.statSync(destFile);
+              totalRealBytes += stat.size;
+              console.log(`[${this.kioskId}]    [SAVED TO DISK] ${asset.filename} (${(stat.size / 1024).toFixed(1)} KB) saved in local cache.`);
+            } else {
+              totalRealBytes += asset.sizeBytes || 1024 * 500;
+            }
+          } catch {
+            totalRealBytes += asset.sizeBytes || 1024 * 500;
+          }
+        }
+        const downloadDurationMs = Math.max(Date.now() - downloadStart, 300);
 
         // Switch local screen display
         this.activeCampaign = {
@@ -195,13 +223,17 @@ export class SimulatedKiosk {
           version: camp.version,
           headline: camp.headline,
           themeColor: camp.themeColor || '#10b981',
+          assets: camp.assets,
         };
 
-        const downloadedMb = camp.assets.reduce((sum, a) => sum + (a.sizeBytes || 0), 0) / (1024 * 1024);
+        const downloadedMb = totalRealBytes > 0
+          ? Number((totalRealBytes / (1024 * 1024)).toFixed(2))
+          : Number((camp.assets.reduce((sum, a) => sum + (a.sizeBytes || 0), 0) / (1024 * 1024)).toFixed(2));
+
         this.localCacheDiskUsageMb = Number((this.localCacheDiskUsageMb + downloadedMb).toFixed(1));
         this.totalAssetsCached += camp.assets.length;
 
-        console.log(`[${this.kioskId}] Download complete (${downloadedMb.toFixed(1)} MB saved to local storage).`);
+        console.log(`[${this.kioskId}] Download complete (${downloadedMb} MB saved to local disk cache).`);
         console.log(`[${this.kioskId}] SCREEN SWITCHED: Now rendering "${this.activeCampaign.headline}" (v${this.activeCampaign.version})`);
 
         // Send acknowledgement to Cloud API
@@ -214,6 +246,8 @@ export class SimulatedKiosk {
     } catch (err: unknown) {
       console.warn(`[${this.kioskId}] Update check warning: ${(err as Error).message}`);
       return false;
+    } finally {
+      this.isUpdating = false;
     }
   }
 

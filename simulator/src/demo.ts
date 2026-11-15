@@ -103,7 +103,7 @@ async function runDemo() {
   console.log(`Total Kiosks: ${initialFleet.total}, Online: ${initialFleet.online}, Offline: ${initialFleet.offline}`);
 
   // Step 3: Register a new Smart Edge Kiosk
-  const testKioskId = 'KIOSK-RETAIL-001';
+  const testKioskId = `KIOSK-DEMO-${Date.now().toString().slice(-4)}`;
   logStep(3, `Register Smart Edge Kiosk: ${testKioskId}`);
   const regRes = await fetch(`${API_BASE_URL}/kiosks`, {
     method: 'POST',
@@ -142,28 +142,23 @@ async function runDemo() {
   console.log(`Active Screen Display: "${kioskState1.activeCampaign.headline}" (v${kioskState1.activeCampaign.version})`);
 
   // Step 6: Admin Publishes a New Content Campaign to S3
-  logStep(6, `Admin Publishes New Media Campaign (v2.0.0) with S3 Assets`);
+  const targetVersion = `${parseInt(kioskState1.activeCampaign.version.split('.')[0] || '1', 10) + 1}.0.0`;
+  logStep(6, `Admin Publishes New Media Campaign (v${targetVersion}) with S3 Assets`);
   const newCampaignRes = await fetch(`${API_BASE_URL}/campaigns`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       name: 'Summer Flash Sale Campaign',
-      version: '2.0.0',
+      version: targetVersion,
       themeColor: '#ef4444',
-      headline: 'SUMMER FLASH SALE: 50% OFF ALL ITEMS!',
-      description: 'High-priority promotional update with 4K video assets and promotional banners',
+      headline: `SUMMER FLASH SALE: 50% OFF ALL ITEMS!`,
+      description: 'High-priority promotional update with graphic assets staged to Amazon S3',
       assets: [
         {
-          filename: 'summer_sale_4k.mp4',
-          mediaType: 'VIDEO',
-          sizeBytes: 15400000,
-          url: 'https://cloudfleet-assets.s3.amazonaws.com/campaigns/summer_sale_4k.mp4',
-        },
-        {
-          filename: 'discount_banner.png',
+          filename: 'flash_sale_poster.svg',
           mediaType: 'IMAGE',
-          sizeBytes: 2800000,
-          url: 'https://cloudfleet-assets.s3.amazonaws.com/campaigns/discount_banner.png',
+          sizeBytes: 198000,
+          url: `${API_BASE_URL}/assets/flash_sale_poster.svg`,
         },
       ],
       targetKiosks: ['ALL'],
@@ -172,7 +167,7 @@ async function runDemo() {
   const newCampaign = (await newCampaignRes.json()) as any;
   console.log(`Campaign Created on S3: ID=${newCampaign.campaignId}, Version=v${newCampaign.version}`);
   console.log(`Headline: "${newCampaign.headline}"`);
-  console.log(`Assets staged in S3: ${newCampaign.assets.length} file(s) (Total ${(18.2).toFixed(1)} MB)`);
+  console.log(`Assets staged in S3: ${newCampaign.assets.length} file(s)`);
 
   // Step 7: Kiosk Checks Cloud API for Updates
   logStep(7, `Kiosk Wakes Up, Calls Serverless Lambda to Check for Updates`);
@@ -180,7 +175,7 @@ async function runDemo() {
   await delay(3500);
 
   // Step 8: Verify Kiosk has Downloaded S3 Assets and Switched Screen
-  logStep(8, `Verify Kiosk Screen Transitioned to New Campaign (v2.0.0)`);
+  logStep(8, `Verify Kiosk Screen Transitioned to New Campaign (v${targetVersion})`);
   const kioskStateRes2 = await fetch(`${API_BASE_URL}/kiosks/${testKioskId}`);
   const kioskState2 = (await kioskStateRes2.json()) as any;
   console.log(`Current Active Campaign: "${kioskState2.activeCampaign.name}"`);
@@ -188,8 +183,8 @@ async function runDemo() {
   console.log(`Headline on Screen: "${kioskState2.activeCampaign.headline}"`);
   console.log(`Local Cache Size: ${kioskState2.localCache.diskUsageMb} MB (${kioskState2.localCache.totalAssetsCached} assets)`);
 
-  if (kioskState2.activeCampaign.version !== '2.0.0') {
-    throw new Error(`Expected kiosk version to be 2.0.0, but found ${kioskState2.activeCampaign.version}`);
+  if (kioskState2.activeCampaign.version !== targetVersion) {
+    throw new Error(`Expected kiosk version to be ${targetVersion}, but found ${kioskState2.activeCampaign.version}`);
   }
 
   // Step 9: Verify Sync Audit History in Cloud Persistence

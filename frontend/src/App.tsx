@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { FleetOverview } from './components/FleetOverview';
 import { KioskTable } from './components/KioskTable';
 import { KioskDetail } from './components/KioskDetail';
+import { KioskScreenSimulator } from './components/KioskScreenSimulator';
 import { CampaignModal } from './components/CampaignModal';
 import { RegisterKioskModal } from './components/RegisterKioskModal';
 import { SimulatorGuideModal } from './components/SimulatorGuideModal';
@@ -11,7 +12,9 @@ import { FleetSummary } from './types';
 import { CheckCircle2 } from 'lucide-react';
 
 export const App: React.FC = () => {
+  const [activeView, setActiveView] = useState<'OPERATIONS' | 'SCREEN_SIMULATOR'>('OPERATIONS');
   const [selectedKioskId, setSelectedKioskId] = useState<string | null>(null);
+  const [simulatorKioskId, setSimulatorKioskId] = useState<string | undefined>(undefined);
   const [fleetSummary, setFleetSummary] = useState<FleetSummary | null>(null);
   const [backendConnected, setBackendConnected] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'ONLINE' | 'SYNCING' | 'OFFLINE'>('ALL');
@@ -36,7 +39,7 @@ export const App: React.FC = () => {
       const summary = await ApiService.getFleet();
       setFleetSummary(summary);
       setBackendConnected(true);
-    } catch (err: unknown) {
+    } catch {
       setBackendConnected(false);
     }
   };
@@ -58,10 +61,20 @@ export const App: React.FC = () => {
     setSelectedKioskId(kioskId);
   };
 
+  const handleOpenScreenSimulator = (kioskId: string) => {
+    setSimulatorKioskId(kioskId);
+    setActiveView('SCREEN_SIMULATOR');
+  };
+
   return (
     <div className="app-container">
       <Header
         backendConnected={backendConnected}
+        activeView={activeView}
+        onViewChange={(view) => {
+          setActiveView(view);
+          setSelectedKioskId(null);
+        }}
         onRefresh={fetchFleet}
         onOpenCampaignModal={() => setIsCampaignOpen(true)}
         onOpenRegisterModal={() => setIsRegisterOpen(true)}
@@ -69,7 +82,12 @@ export const App: React.FC = () => {
       />
 
       <main className="main-content">
-        {selectedKioskId ? (
+        {activeView === 'SCREEN_SIMULATOR' ? (
+          <KioskScreenSimulator
+            initialKioskId={simulatorKioskId || fleetSummary?.kiosks[0]?.kioskId}
+            onSwitchToOperations={() => setActiveView('OPERATIONS')}
+          />
+        ) : selectedKioskId ? (
           <KioskDetail
             kioskId={selectedKioskId}
             onBack={() => {
@@ -89,6 +107,7 @@ export const App: React.FC = () => {
               selectedFilter={selectedFilter}
               onFilterChange={setSelectedFilter}
               onSelectKiosk={(id) => setSelectedKioskId(id)}
+              onOpenScreenSimulator={handleOpenScreenSimulator}
             />
           </>
         )}

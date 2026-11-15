@@ -73,6 +73,7 @@ export class SyncService {
         version: payload.version,
         headline: campaign?.headline || '',
         themeColor: campaign?.themeColor || '#10b981',
+        assets: campaign?.assets || [],
       };
       kiosk.status = 'ONLINE';
       kiosk.lastHeartbeat = now;

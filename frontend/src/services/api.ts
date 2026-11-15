@@ -82,6 +82,29 @@ export class ApiService {
     return res.json();
   }
 
+  static async uploadAsset(data: {
+    filename: string;
+    fileData: string;
+    mediaType?: 'IMAGE' | 'VIDEO' | 'HTML_BUNDLE';
+  }): Promise<{
+    assetId: string;
+    filename: string;
+    mediaType: 'IMAGE' | 'VIDEO' | 'HTML_BUNDLE';
+    sizeBytes: number;
+    url: string;
+  }> {
+    const res = await fetch(`${API_BASE_URL}/assets/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Failed to upload asset (${res.status})`);
+    }
+    return res.json();
+  }
+
   static async getSyncHistory(kioskId: string): Promise<SyncHistoryRecord[]> {
     const res = await fetch(`${API_BASE_URL}/kiosks/${kioskId}/history`);
     if (!res.ok) throw new Error(`Failed to fetch history: ${res.statusText}`);

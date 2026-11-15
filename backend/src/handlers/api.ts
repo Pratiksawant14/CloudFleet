@@ -2,6 +2,7 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { KioskService } from '../services/kioskService.js';
 import { CampaignService } from '../services/campaignService.js';
 import { SyncService } from '../services/syncService.js';
+import { AssetService } from '../services/assetService.js';
 import { Logger } from '../utils/logger.js';
 
 const CORS_HEADERS = {
@@ -118,6 +119,36 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       const campaign = await CampaignService.getCampaign(campaignId);
       if (!campaign) return errorResponse(404, `Campaign '${campaignId}' not found.`, 'NOT_FOUND');
       return jsonResponse(200, campaign);
+    }
+
+    // 5. Binary S3 Asset Management
+    if (method === 'POST' && rawPath === '/assets/upload') {
+      const { filename, fileData, mediaType } = body;
+      const host = event.headers?.host || event.requestContext?.domainName || 'localhost:4000';
+      const protocol = event.headers?.['x-forwarded-proto'] || 'https';
+      const result = await AssetService.uploadAsset({
+        filename,
+        fileData,
+        mediaType,
+        baseUrl: `${protocol}://${host}`,
+      });
+      return jsonResponse(201, result);
+    }
+
+    const assetGetMatch = rawPath.match(/^\/assets\/([A-Za-z0-9_.-]+)$/);
+    if (method === 'GET' && assetGetMatch) {
+      const filename = assetGetMatch[1];
+      const asset = await AssetService.getAsset(filename);
+      if (!asset) return errorResponse(404, `Asset '${filename}' not found.`, 'NOT_FOUND');
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': asset.contentType,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+        body: asset.buffer.toString('base64'),
+        isBase64Encoded: true,
+      };
     }
 
     return errorResponse(404, `Cannot ${method} ${rawPath}`, 'ROUTE_NOT_FOUND');

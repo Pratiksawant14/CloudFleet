@@ -7,6 +7,7 @@ interface KioskTableProps {
   selectedFilter: 'ALL' | 'ONLINE' | 'SYNCING' | 'OFFLINE';
   onFilterChange: (status: 'ALL' | 'ONLINE' | 'SYNCING' | 'OFFLINE') => void;
   onSelectKiosk: (kioskId: string) => void;
+  onOpenScreenSimulator?: (kioskId: string) => void;
 }
 
 export const KioskTable: React.FC<KioskTableProps> = ({
@@ -14,6 +15,7 @@ export const KioskTable: React.FC<KioskTableProps> = ({
   selectedFilter,
   onFilterChange,
   onSelectKiosk,
+  onOpenScreenSimulator,
 }) => {
   const [search, setSearch] = useState('');
 
@@ -154,17 +156,33 @@ export const KioskTable: React.FC<KioskTableProps> = ({
                       {formatLastHeartbeat(kiosk.lastHeartbeat)}
                     </td>
                     <td>
-                      <button
-                        className="btn-secondary"
-                        style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectKiosk(kiosk.kioskId);
-                        }}
-                      >
-                        Inspect
-                        <ChevronRight size={14} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        {onOpenScreenSimulator && (
+                          <button
+                            className="btn-secondary"
+                            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem', color: 'var(--accent-cyan)' }}
+                            title="Open Realistic Kiosk Screen View"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenScreenSimulator(kiosk.kioskId);
+                            }}
+                          >
+                            <Monitor size={12} />
+                            Screen
+                          </button>
+                        )}
+                        <button
+                          className="btn-secondary"
+                          style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectKiosk(kiosk.kioskId);
+                          }}
+                        >
+                          Inspect
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
