@@ -8,6 +8,8 @@ build/
 # Local Data & Simulator Emulation Storage
 .local-s3/
 .test-storage/
+.test-kiosk-storage/
+.kiosk-cache/
 data/
 *.log
 

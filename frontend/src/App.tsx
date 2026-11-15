@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { FleetOverview } from './components/FleetOverview';
-import { DeviceTable } from './components/DeviceTable';
-import { DeviceDetail } from './components/DeviceDetail';
-import { AlertsList } from './components/AlertsList';
-import { RegisterDeviceModal } from './components/RegisterDeviceModal';
+import { KioskTable } from './components/KioskTable';
+import { KioskDetail } from './components/KioskDetail';
+import { CampaignModal } from './components/CampaignModal';
+import { RegisterKioskModal } from './components/RegisterKioskModal';
 import { SimulatorGuideModal } from './components/SimulatorGuideModal';
 import { ApiService } from './services/api';
 import { FleetSummary } from './types';
 import { CheckCircle2 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'fleet' | 'alerts'>('fleet');
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [selectedKioskId, setSelectedKioskId] = useState<string | null>(null);
   const [fleetSummary, setFleetSummary] = useState<FleetSummary | null>(null);
   const [backendConnected, setBackendConnected] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'ONLINE' | 'WARNING' | 'OFFLINE'>('ALL');
+  const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'ONLINE' | 'SYNCING' | 'OFFLINE'>('ALL');
 
   // Modals
+  const [isCampaignOpen, setIsCampaignOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
-  // Toast notifications
+  // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (message: string) => {
@@ -43,48 +43,40 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     fetchFleet();
-    const interval = setInterval(fetchFleet, 3000);
+    const interval = setInterval(fetchFleet, 2500);
     return () => clearInterval(interval);
   }, []);
 
-  const handleDeviceRegistered = (deviceId: string) => {
-    showToast(`Device ${deviceId} registered successfully.`);
+  const handleCampaignPublished = (name: string, version: string) => {
+    showToast(`Campaign "${name}" (v${version}) published to Amazon S3! Kiosks will auto-sync.`);
     fetchFleet();
-    setSelectedDeviceId(deviceId);
+  };
+
+  const handleKioskRegistered = (kioskId: string) => {
+    showToast(`Kiosk ${kioskId} registered successfully.`);
+    fetchFleet();
+    setSelectedKioskId(kioskId);
   };
 
   return (
     <div className="app-container">
       <Header
         backendConnected={backendConnected}
-        activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          setSelectedDeviceId(null);
-        }}
         onRefresh={fetchFleet}
+        onOpenCampaignModal={() => setIsCampaignOpen(true)}
         onOpenRegisterModal={() => setIsRegisterOpen(true)}
         onOpenSimulatorGuide={() => setIsGuideOpen(true)}
-        activeAlertCount={fleetSummary?.activeAlerts || 0}
       />
 
       <main className="main-content">
-        {selectedDeviceId ? (
-          <DeviceDetail
-            deviceId={selectedDeviceId}
+        {selectedKioskId ? (
+          <KioskDetail
+            kioskId={selectedKioskId}
             onBack={() => {
-              setSelectedDeviceId(null);
+              setSelectedKioskId(null);
               fetchFleet();
             }}
             onShowToast={showToast}
-          />
-        ) : activeTab === 'alerts' ? (
-          <AlertsList
-            onShowToast={showToast}
-            onSelectDevice={(deviceId) => {
-              setSelectedDeviceId(deviceId);
-              setActiveTab('fleet');
-            }}
           />
         ) : (
           <>
@@ -92,20 +84,26 @@ export const App: React.FC = () => {
               summary={fleetSummary}
               onFilterClick={(status) => setSelectedFilter(status)}
             />
-            <DeviceTable
-              devices={fleetSummary?.devices || []}
+            <KioskTable
+              kiosks={fleetSummary?.kiosks || []}
               selectedFilter={selectedFilter}
               onFilterChange={setSelectedFilter}
-              onSelectDevice={(deviceId) => setSelectedDeviceId(deviceId)}
+              onSelectKiosk={(id) => setSelectedKioskId(id)}
             />
           </>
         )}
       </main>
 
-      <RegisterDeviceModal
+      <CampaignModal
+        isOpen={isCampaignOpen}
+        onClose={() => setIsCampaignOpen(false)}
+        onCampaignPublished={handleCampaignPublished}
+      />
+
+      <RegisterKioskModal
         isOpen={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
-        onDeviceRegistered={handleDeviceRegistered}
+        onKioskRegistered={handleKioskRegistered}
       />
 
       <SimulatorGuideModal
@@ -124,4 +122,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-

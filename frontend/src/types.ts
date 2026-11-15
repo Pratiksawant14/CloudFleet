@@ -1,90 +1,82 @@
-export type DeviceStatus = 'ONLINE' | 'OFFLINE' | 'WARNING';
+export type KioskStatus = 'ONLINE' | 'OFFLINE' | 'SYNCING' | 'WARNING';
 
-export type DeviceType =
-  | 'ENVIRONMENTAL_MONITOR'
-  | 'TEMPERATURE_PROBE'
-  | 'BATTERY_TELEMETRY'
-  | 'GENERIC_IOT';
+export type KioskType =
+  | 'RETAIL_KIOSK'
+  | 'DIGITAL_SIGNAGE'
+  | 'INTERACTIVE_SCREEN'
+  | 'AIRPORT_DISPLAY';
 
-export interface TelemetryMetrics {
-  temperature: number;
-  humidity: number;
-  battery: number;
+export interface CampaignAsset {
+  assetId: string;
+  filename: string;
+  mediaType: 'IMAGE' | 'VIDEO' | 'HTML_BUNDLE';
+  sizeBytes: number;
+  url: string;
+  checksum: string;
 }
 
-export interface TelemetryRecord {
-  telemetryId: string;
-  deviceId: string;
-  timestamp: string;
-  metrics: TelemetryMetrics;
-  simulatorMetadata?: {
-    operationalMode?: string;
-    uptimeSeconds?: number;
-    firmwareVersion?: string;
-  };
-}
-
-export interface DeviceState {
-  deviceId: string;
+export interface CampaignManifest {
+  campaignId: string;
   name: string;
-  deviceType: DeviceType;
+  version: string;
+  themeColor: string;
+  headline: string;
+  description: string;
+  assets: CampaignAsset[];
+  targetKiosks: string[];
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  createdAt: string;
+  publishedAt?: string;
+}
+
+export interface KioskState {
+  kioskId: string;
+  name: string;
+  kioskType: KioskType;
   location: string;
-  status: DeviceStatus;
-  operationalMode: string;
-  createdAt: string;
-  updatedAt: string;
-  lastSeen: string | null;
-  latestTelemetry: (TelemetryMetrics & { timestamp: string }) | null;
-  activeAlertCount: number;
-}
-
-export type CommandType = 'START' | 'STOP' | 'RESTART' | 'SET_MODE';
-
-export type CommandStatus =
-  | 'PENDING'
-  | 'DISPATCHED'
-  | 'EXECUTED'
-  | 'ACKNOWLEDGED'
-  | 'FAILED';
-
-export interface CommandRecord {
-  commandId: string;
-  deviceId: string;
-  type: CommandType;
-  parameters?: Record<string, unknown>;
-  status: CommandStatus;
-  createdAt: string;
-  dispatchedAt?: string;
-  acknowledgedAt?: string;
-  executionResult?: {
-    success: boolean;
-    message: string;
+  status: KioskStatus;
+  activeCampaign: {
+    campaignId: string;
+    name: string;
+    version: string;
+    headline: string;
+    themeColor?: string;
   };
+  localCache: {
+    totalAssetsCached: number;
+    diskUsageMb: number;
+  };
+  lastHeartbeat: string | null;
+  systemMetrics: {
+    cpuUsage: number;
+    temperature: number;
+    storageFreeMb: number;
+  };
+  updatedAt: string;
 }
 
-export type AlertType = 'HIGH_TEMPERATURE' | 'LOW_BATTERY' | 'DEVICE_OFFLINE';
-export type AlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
-export type AlertStatus = 'ACTIVE' | 'RESOLVED';
+export interface UpdateCheckResult {
+  hasUpdate: boolean;
+  currentVersion: string;
+  availableCampaign?: CampaignManifest | null;
+}
 
-export interface AlertRecord {
-  alertId: string;
-  deviceId: string;
-  type: AlertType;
-  severity: AlertSeverity;
-  status: AlertStatus;
+export interface SyncHistoryRecord {
+  syncId: string;
+  kioskId: string;
+  campaignId: string;
+  version: string;
+  appliedAt: string;
+  downloadDurationMs: number;
+  success: boolean;
   message: string;
-  metricValue?: number;
-  thresholdValue?: number;
-  triggeredAt: string;
-  resolvedAt?: string | null;
 }
 
 export interface FleetSummary {
-  devices: DeviceState[];
+  kiosks: KioskState[];
   total: number;
   online: number;
+  syncing: number;
   offline: number;
-  warning: number;
-  activeAlerts: number;
+  activeCampaigns: number;
 }
-

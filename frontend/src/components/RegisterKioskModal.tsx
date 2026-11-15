@@ -2,21 +2,21 @@ import React, { useState } from 'react';
 import { X, Plus, AlertCircle } from 'lucide-react';
 import { ApiService } from '../services/api';
 
-interface RegisterDeviceModalProps {
+interface RegisterKioskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDeviceRegistered: (deviceId: string) => void;
+  onKioskRegistered: (kioskId: string) => void;
 }
 
-export const RegisterDeviceModal: React.FC<RegisterDeviceModalProps> = ({
+export const RegisterKioskModal: React.FC<RegisterKioskModalProps> = ({
   isOpen,
   onClose,
-  onDeviceRegistered,
+  onKioskRegistered,
 }) => {
-  const [deviceId, setDeviceId] = useState('CF-DEVICE-001');
-  const [name, setName] = useState('Temperature Sensor 001');
-  const [deviceType, setDeviceType] = useState('ENVIRONMENTAL_MONITOR');
-  const [location, setLocation] = useState('Warehouse-Bay-1');
+  const [kioskId, setKioskId] = useState('KIOSK-RETAIL-001');
+  const [name, setName] = useState('Downtown Store Entrance Display');
+  const [kioskType, setKioskType] = useState('RETAIL_KIOSK');
+  const [location, setLocation] = useState('Flagship Store - Bay 1');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,13 +28,13 @@ export const RegisterDeviceModal: React.FC<RegisterDeviceModalProps> = ({
     setLoading(true);
 
     try {
-      await ApiService.registerDevice({
-        deviceId: deviceId.trim().toUpperCase(),
+      await ApiService.registerKiosk({
+        kioskId: kioskId.trim().toUpperCase(),
         name: name.trim(),
-        deviceType,
+        kioskType,
         location: location.trim(),
       });
-      onDeviceRegistered(deviceId.trim().toUpperCase());
+      onKioskRegistered(kioskId.trim().toUpperCase());
       onClose();
     } catch (err: unknown) {
       setError((err as Error).message || 'Registration failed.');
@@ -47,7 +47,7 @@ export const RegisterDeviceModal: React.FC<RegisterDeviceModalProps> = ({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">Register Simulated IoT Device</h2>
+          <h2 className="modal-title">Register Smart Edge Kiosk</h2>
           <button className="modal-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
@@ -75,54 +75,54 @@ export const RegisterDeviceModal: React.FC<RegisterDeviceModalProps> = ({
 
         <form onSubmit={handleSubmit} className="command-form">
           <div className="form-group">
-            <label className="form-label">Device Identifier (ID)</label>
+            <label className="form-label">Kiosk Unique Identifier (ID)</label>
             <input
               type="text"
               className="form-input"
-              value={deviceId}
-              onChange={(e) => setDeviceId(e.target.value.toUpperCase())}
-              placeholder="e.g. CF-DEVICE-001"
+              value={kioskId}
+              onChange={(e) => setKioskId(e.target.value.toUpperCase())}
+              placeholder="e.g. KIOSK-RETAIL-001"
               required
             />
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Format: 3-32 alphanumeric characters, hyphens, or underscores.
+              Format: 3-32 alphanumeric characters, dashes, or underscores.
             </span>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Friendly Device Name</label>
+            <label className="form-label">Display Friendly Name</label>
             <input
               type="text"
               className="form-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Cold Storage Sensor 01"
+              placeholder="e.g. Mall West Promenade Kiosk"
               required
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Device Type</label>
+            <label className="form-label">Kiosk Screen Type</label>
             <select
               className="form-select"
-              value={deviceType}
-              onChange={(e) => setDeviceType(e.target.value)}
+              value={kioskType}
+              onChange={(e) => setKioskType(e.target.value)}
             >
-              <option value="ENVIRONMENTAL_MONITOR">ENVIRONMENTAL_MONITOR</option>
-              <option value="TEMPERATURE_PROBE">TEMPERATURE_PROBE</option>
-              <option value="BATTERY_TELEMETRY">BATTERY_TELEMETRY</option>
-              <option value="GENERIC_IOT">GENERIC_IOT</option>
+              <option value="RETAIL_KIOSK">RETAIL_KIOSK (Store & Checkout)</option>
+              <option value="DIGITAL_SIGNAGE">DIGITAL_SIGNAGE (Billboard Display)</option>
+              <option value="INTERACTIVE_SCREEN">INTERACTIVE_SCREEN (Wayfinding & Menu)</option>
+              <option value="AIRPORT_DISPLAY">AIRPORT_DISPLAY (Passenger Information)</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Physical Location Label</label>
+            <label className="form-label">Store / Venue Location</label>
             <input
               type="text"
               className="form-input"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Warehouse-Bay-4"
+              placeholder="e.g. Flagship Store - Bay 1"
             />
           </div>
 
@@ -132,7 +132,7 @@ export const RegisterDeviceModal: React.FC<RegisterDeviceModalProps> = ({
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
               <Plus size={16} />
-              <span>{loading ? 'Registering...' : 'Register Device'}</span>
+              <span>{loading ? 'Provisioning...' : 'Register Kiosk'}</span>
             </button>
           </div>
         </form>
@@ -140,4 +140,3 @@ export const RegisterDeviceModal: React.FC<RegisterDeviceModalProps> = ({
     </div>
   );
 };
-

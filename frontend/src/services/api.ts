@@ -1,11 +1,8 @@
 import {
-  DeviceState,
+  KioskState,
   FleetSummary,
-  TelemetryRecord,
-  CommandRecord,
-  CommandType,
-  AlertRecord,
-  AlertStatus,
+  CampaignManifest,
+  SyncHistoryRecord,
 } from '../types';
 
 const API_BASE_URL =
@@ -24,100 +21,71 @@ export class ApiService {
   }
 
   static async getFleet(): Promise<FleetSummary> {
-    const res = await fetch(`${API_BASE_URL}/devices`);
-    if (!res.ok) throw new Error(`Failed to fetch fleet: ${res.statusText}`);
+    const res = await fetch(`${API_BASE_URL}/kiosks`);
+    if (!res.ok) throw new Error(`Failed to fetch kiosks: ${res.statusText}`);
     return res.json();
   }
 
-  static async getDevice(deviceId: string): Promise<DeviceState> {
-    const res = await fetch(`${API_BASE_URL}/devices/${deviceId}`);
-    if (!res.ok) throw new Error(`Failed to fetch device: ${res.statusText}`);
+  static async getKiosk(kioskId: string): Promise<KioskState> {
+    const res = await fetch(`${API_BASE_URL}/kiosks/${kioskId}`);
+    if (!res.ok) throw new Error(`Failed to fetch kiosk: ${res.statusText}`);
     return res.json();
   }
 
-  static async registerDevice(data: {
-    deviceId: string;
+  static async registerKiosk(data: {
+    kioskId: string;
     name: string;
-    deviceType?: string;
+    kioskType?: string;
     location?: string;
-  }): Promise<DeviceState> {
-    const res = await fetch(`${API_BASE_URL}/devices`, {
+  }): Promise<KioskState> {
+    const res = await fetch(`${API_BASE_URL}/kiosks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Failed to register device (${res.status})`);
+      throw new Error(err.error?.message || `Failed to register kiosk (${res.status})`);
     }
     return res.json();
   }
 
-  static async getTelemetryHistory(
-    deviceId: string,
-    limit: number = 30
-  ): Promise<TelemetryRecord[]> {
-    const res = await fetch(
-      `${API_BASE_URL}/devices/${deviceId}/telemetry?limit=${limit}`
-    );
-    if (!res.ok) throw new Error(`Failed to fetch telemetry: ${res.statusText}`);
+  static async getCampaigns(): Promise<CampaignManifest[]> {
+    const res = await fetch(`${API_BASE_URL}/campaigns`);
+    if (!res.ok) throw new Error(`Failed to fetch campaigns: ${res.statusText}`);
+    const data = await res.json();
+    return data.campaigns || [];
+  }
+
+  static async createCampaign(data: {
+    name: string;
+    version: string;
+    themeColor?: string;
+    headline: string;
+    description?: string;
+    targetKiosks?: string[];
+    assets?: Array<{
+      filename: string;
+      mediaType: 'IMAGE' | 'VIDEO' | 'HTML_BUNDLE';
+      sizeBytes: number;
+    }>;
+  }): Promise<CampaignManifest> {
+    const res = await fetch(`${API_BASE_URL}/campaigns`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Failed to publish campaign (${res.status})`);
+    }
+    return res.json();
+  }
+
+  static async getSyncHistory(kioskId: string): Promise<SyncHistoryRecord[]> {
+    const res = await fetch(`${API_BASE_URL}/kiosks/${kioskId}/history`);
+    if (!res.ok) throw new Error(`Failed to fetch history: ${res.statusText}`);
     const data = await res.json();
     return data.history || [];
   }
-
-  static async sendCommand(
-    deviceId: string,
-    type: CommandType,
-    parameters?: Record<string, unknown>
-  ): Promise<CommandRecord> {
-    const res = await fetch(`${API_BASE_URL}/devices/${deviceId}/commands`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, parameters }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Failed to send command (${res.status})`);
-    }
-    return res.json();
-  }
-
-  static async getCommands(deviceId: string): Promise<CommandRecord[]> {
-    const res = await fetch(`${API_BASE_URL}/devices/${deviceId}/commands`);
-    if (!res.ok) throw new Error(`Failed to fetch commands: ${res.statusText}`);
-    const data = await res.json();
-    return data.commands || [];
-  }
-
-  static async getAlerts(filter?: {
-    deviceId?: string;
-    status?: AlertStatus;
-  }): Promise<AlertRecord[]> {
-    const params = new URLSearchParams();
-    if (filter?.deviceId) params.set('deviceId', filter.deviceId);
-    if (filter?.status) params.set('status', filter.status);
-
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await fetch(`${API_BASE_URL}/alerts${query}`);
-    if (!res.ok) throw new Error(`Failed to fetch alerts: ${res.statusText}`);
-    const data = await res.json();
-    return data.alerts || [];
-  }
-
-  static async resolveAlert(
-    deviceId: string,
-    alertId: string
-  ): Promise<AlertRecord> {
-    const res = await fetch(`${API_BASE_URL}/alerts/${alertId}/resolve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceId }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Failed to resolve alert (${res.status})`);
-    }
-    return res.json();
-  }
 }
-

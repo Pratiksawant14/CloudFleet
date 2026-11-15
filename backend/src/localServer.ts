@@ -1,11 +1,9 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { DeviceService } from './services/deviceService.js';
-import { TelemetryService } from './services/telemetryService.js';
-import { CommandService } from './services/commandService.js';
-import { AlertService } from './services/alertService.js';
+import { KioskService } from './services/kioskService.js';
+import { CampaignService } from './services/campaignService.js';
+import { SyncService } from './services/syncService.js';
 import { Logger } from './utils/logger.js';
-import { AlertStatus } from './types/index.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -13,8 +11,8 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// Request logging middleware
-app.use((req, res, next) => {
+// Request logger
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
@@ -24,142 +22,119 @@ app.use((req, res, next) => {
 });
 
 // Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({
+    status: 'healthy',
+    service: 'CloudFleet Serverless Kiosk Management API',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// Devices
-app.post('/devices', async (req: Request, res: Response) => {
+// Kiosk Management
+app.post('/kiosks', async (req: Request, res: Response) => {
   try {
-    const device = await DeviceService.registerDevice(req.body);
-    res.status(201).json(device);
+    const kiosk = await KioskService.registerKiosk(req.body);
+    res.status(201).json(kiosk);
   } catch (err: unknown) {
     res.status(400).json({ error: { message: (err as Error).message } });
   }
 });
 
-app.get('/devices', async (req: Request, res: Response) => {
+app.get('/kiosks', async (_req: Request, res: Response) => {
   try {
-    const fleet = await DeviceService.listDevices();
+    const fleet = await KioskService.listKiosks();
     res.json(fleet);
   } catch (err: unknown) {
     res.status(500).json({ error: { message: (err as Error).message } });
   }
 });
 
-app.get('/devices/:id', async (req: Request, res: Response) => {
+app.get('/kiosks/:id', async (req: Request, res: Response) => {
   try {
-    const device = await DeviceService.getDevice(req.params.id);
-    if (!device) {
-      res.status(404).json({ error: { message: `Device '${req.params.id}' not found.` } });
+    const kiosk = await KioskService.getKiosk(req.params.id);
+    if (!kiosk) {
+      res.status(404).json({ error: { message: `Kiosk '${req.params.id}' not found.` } });
       return;
     }
-    res.json(device);
+    res.json(kiosk);
   } catch (err: unknown) {
     res.status(500).json({ error: { message: (err as Error).message } });
   }
 });
 
-// Telemetry
-app.post('/devices/:id/telemetry', async (req: Request, res: Response) => {
+app.post('/kiosks/:id/heartbeat', async (req: Request, res: Response) => {
   try {
-    const result = await TelemetryService.ingestTelemetry(req.params.id, req.body);
-    res.status(202).json({
-      status: 'INGESTED',
-      telemetryId: result.telemetryRecord.telemetryId,
-      deviceStatus: result.deviceState.status,
-    });
+    const updated = await KioskService.updateHeartbeat(req.params.id, req.body.metrics);
+    res.json(updated);
   } catch (err: unknown) {
     res.status(400).json({ error: { message: (err as Error).message } });
   }
 });
 
-app.get('/devices/:id/telemetry', async (req: Request, res: Response) => {
+// On-Demand Kiosk Updates
+app.post('/kiosks/:id/check-update', async (req: Request, res: Response) => {
   try {
-    const limit = req.query.limit ? parseInt(String(req.query.limit), 10) : 50;
-    const history = await TelemetryService.getTelemetryHistory(req.params.id, limit);
-    res.json({ deviceId: req.params.id, history });
-  } catch (err: unknown) {
-    res.status(500).json({ error: { message: (err as Error).message } });
-  }
-});
-
-// Commands
-app.get('/devices/:id/commands/pending', async (req: Request, res: Response) => {
-  try {
-    const pending = await CommandService.getPendingCommands(req.params.id);
-    res.json({ deviceId: req.params.id, pending });
-  } catch (err: unknown) {
-    res.status(500).json({ error: { message: (err as Error).message } });
-  }
-});
-
-app.post('/devices/:id/commands/:cmdId/ack', async (req: Request, res: Response) => {
-  try {
-    const acknowledged = await CommandService.acknowledgeCommand({
-      deviceId: req.params.id,
-      commandId: req.params.cmdId,
-      status: req.body.status,
-      executionResult: req.body.executionResult,
-    });
-    res.json(acknowledged);
+    const result = await SyncService.checkForUpdates(req.params.id, req.body.currentVersion);
+    res.json(result);
   } catch (err: unknown) {
     res.status(400).json({ error: { message: (err as Error).message } });
   }
 });
 
-app.post('/devices/:id/commands', async (req: Request, res: Response) => {
+app.post('/kiosks/:id/sync-ack', async (req: Request, res: Response) => {
   try {
-    const command = await CommandService.sendCommand({
-      deviceId: req.params.id,
-      type: req.body.type,
-      parameters: req.body.parameters,
-    });
-    res.status(201).json(command);
+    const result = await SyncService.acknowledgeSync(req.params.id, req.body);
+    res.json(result);
   } catch (err: unknown) {
     res.status(400).json({ error: { message: (err as Error).message } });
   }
 });
 
-app.get('/devices/:id/commands', async (req: Request, res: Response) => {
+app.get('/kiosks/:id/history', async (req: Request, res: Response) => {
   try {
-    const commands = await CommandService.getCommands(req.params.id);
-    res.json({ deviceId: req.params.id, commands });
+    const history = await SyncService.getSyncHistory(req.params.id);
+    res.json({ kioskId: req.params.id, history });
   } catch (err: unknown) {
     res.status(500).json({ error: { message: (err as Error).message } });
   }
 });
 
-// Alerts
-app.get('/alerts', async (req: Request, res: Response) => {
+// Campaign Management (Admin)
+app.post('/campaigns', async (req: Request, res: Response) => {
   try {
-    const status = req.query.status as AlertStatus | undefined;
-    const deviceId = req.query.deviceId as string | undefined;
-    const alerts = await AlertService.listAlerts({ status, deviceId });
-    res.json({ alerts, total: alerts.length });
+    const campaign = await CampaignService.createCampaign(req.body);
+    res.status(201).json(campaign);
+  } catch (err: unknown) {
+    res.status(400).json({ error: { message: (err as Error).message } });
+  }
+});
+
+app.get('/campaigns', async (_req: Request, res: Response) => {
+  try {
+    const campaigns = await CampaignService.listCampaigns();
+    res.json({ campaigns, total: campaigns.length });
   } catch (err: unknown) {
     res.status(500).json({ error: { message: (err as Error).message } });
   }
 });
 
-app.post('/alerts/:id/resolve', async (req: Request, res: Response) => {
+app.get('/campaigns/:id', async (req: Request, res: Response) => {
   try {
-    const { deviceId } = req.body;
-    if (!deviceId) {
-      res.status(400).json({ error: { message: "Must provide 'deviceId' in request body." } });
+    const campaign = await CampaignService.getCampaign(req.params.id);
+    if (!campaign) {
+      res.status(404).json({ error: { message: `Campaign '${req.params.id}' not found.` } });
       return;
     }
-    const resolved = await AlertService.resolveAlert(deviceId, req.params.id);
-    res.json(resolved);
+    res.json(campaign);
   } catch (err: unknown) {
-    res.status(400).json({ error: { message: (err as Error).message } });
+    res.status(500).json({ error: { message: (err as Error).message } });
   }
 });
 
 // Start listening
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
-    Logger.info('SERVER_START', `CloudFleet Backend API listening on http://localhost:${PORT}`);
+    Logger.info('SERVER_START', `CloudFleet Kiosk API listening on http://localhost:${PORT}`);
   });
 }
 
