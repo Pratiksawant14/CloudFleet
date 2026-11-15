@@ -87,3 +87,4 @@ export interface FleetSummary {
   warning: number;
   activeAlerts: number;
 }
+

@@ -185,3 +185,4 @@ Terraform outputs the deployed `api_endpoint` and `s3_bucket_name`.
 
 ## Authoritative Documentation
 For full architectural details, S3 partitioning specifications, and scope boundaries, refer to [CLOUDFLEET_PROJECT_KNOWLEDGE.md](file:///d:/Sem-5/CloudFeet/CLOUDFLEET_PROJECT_KNOWLEDGE.md).
+

@@ -446,3 +446,4 @@ export const DeviceDetail: React.FC<DeviceDetailProps> = ({ deviceId, onBack, on
     </div>
   );
 };
+

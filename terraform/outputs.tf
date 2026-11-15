@@ -12,3 +12,4 @@ output "lambda_function_name" {
   description = "Name of the backend Lambda function"
   value       = aws_lambda_function.api_backend.function_name
 }
+

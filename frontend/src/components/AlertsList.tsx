@@ -149,3 +149,4 @@ export const AlertsList: React.FC<AlertsListProps> = ({ onShowToast, onSelectDev
     </div>
   );
 };
+

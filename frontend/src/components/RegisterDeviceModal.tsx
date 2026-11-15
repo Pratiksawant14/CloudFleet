@@ -140,3 +140,4 @@ export const RegisterDeviceModal: React.FC<RegisterDeviceModalProps> = ({
     </div>
   );
 };
+

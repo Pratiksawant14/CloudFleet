@@ -28,3 +28,4 @@ resource "aws_lambda_function" "api_backend" {
     aws_iam_role_policy_attachment.lambda_logging
   ]
 }
+

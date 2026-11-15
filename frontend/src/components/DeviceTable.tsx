@@ -171,3 +171,4 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({
     </div>
   );
 };
+

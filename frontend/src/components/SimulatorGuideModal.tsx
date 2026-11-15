@@ -77,3 +77,4 @@ export const SimulatorGuideModal: React.FC<SimulatorGuideModalProps> = ({ isOpen
     </div>
   );
 };
+
