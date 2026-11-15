@@ -31,7 +31,7 @@ export class CampaignService {
   static async ensureDefaultCampaign(): Promise<void> {
     try {
       await AssetService.seedDefaultAssets();
-    } catch {}
+    } catch { }
 
     const storage = getStorageProvider();
     const manifestKey = `campaigns/${this.DEFAULT_CAMPAIGN.campaignId}/manifest.json`;

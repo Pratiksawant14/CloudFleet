@@ -1,5 +1,5 @@
 import React from 'react';
-import { MonitorPlay, RefreshCw, Plus, Terminal, UploadCloud, Monitor, LayoutDashboard } from 'lucide-react';
+import { MonitorPlay, RefreshCw, Plus, Terminal, UploadCloud, Monitor, LayoutDashboard, Tv } from 'lucide-react';
 import { ApiService } from '../services/api';
 
 interface HeaderProps {
@@ -96,6 +96,16 @@ export const Header: React.FC<HeaderProps> = ({
         <button className="btn-secondary" onClick={onRefresh} title="Refresh data">
           <RefreshCw size={14} />
           <span>Sync</span>
+        </button>
+
+        <button
+          className="btn-secondary"
+          onClick={() => window.open('/screen', '_blank')}
+          title="Open edge-to-edge TV screen in a new window/monitor"
+          style={{ color: 'var(--accent-cyan)' }}
+        >
+          <Tv size={14} />
+          <span>Open TV Screen</span>
         </button>
 
         <button className="btn-secondary" onClick={onOpenSimulatorGuide} title="Simulator Guide">

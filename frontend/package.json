@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:screen": "vite --port 3001 --open /screen",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

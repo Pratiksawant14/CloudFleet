@@ -11,6 +11,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Activity,
+  ExternalLink,
 } from 'lucide-react';
 import { KioskState } from '../types';
 import { ApiService } from '../services/api';
@@ -168,6 +169,16 @@ export const KioskScreenSimulator: React.FC<KioskScreenSimulatorProps> = ({
           >
             <Layers size={14} />
             {showArchitectureHud ? 'Hide Architecture HUD' : 'Show Architecture HUD'}
+          </button>
+
+          <button
+            className="btn-secondary"
+            onClick={() => window.open(`/screen?id=${selectedKioskId}`, '_blank')}
+            style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem', color: 'var(--accent-cyan)' }}
+            title="Open pure edge-to-edge TV screen in a new window"
+          >
+            <ExternalLink size={14} />
+            Open Dedicated TV URL
           </button>
 
           <button
@@ -402,26 +413,6 @@ export const KioskScreenSimulator: React.FC<KioskScreenSimulatorProps> = ({
               {campaign?.headline}
             </h2>
           </div>
-
-          {/* Offline Edge Indicator */}
-          <div
-            style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.85)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(8px)',
-              padding: '0.6rem 1rem',
-              borderRadius: '8px',
-              textAlign: 'right',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '0.8rem', fontWeight: 600 }}>
-              <ShieldCheck size={16} />
-              <span>Offline Edge Storage</span>
-            </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              Cached: {currentKiosk?.localCache.diskUsageMb || 24.5} MB | ID: {currentKiosk?.kioskId}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -531,3 +522,4 @@ export const KioskScreenSimulator: React.FC<KioskScreenSimulatorProps> = ({
     </div>
   );
 };
+

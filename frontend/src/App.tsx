@@ -4,6 +4,7 @@ import { FleetOverview } from './components/FleetOverview';
 import { KioskTable } from './components/KioskTable';
 import { KioskDetail } from './components/KioskDetail';
 import { KioskScreenSimulator } from './components/KioskScreenSimulator';
+import { PureKioskScreen } from './components/PureKioskScreen';
 import { CampaignModal } from './components/CampaignModal';
 import { RegisterKioskModal } from './components/RegisterKioskModal';
 import { SimulatorGuideModal } from './components/SimulatorGuideModal';
@@ -65,6 +66,15 @@ export const App: React.FC = () => {
     setSimulatorKioskId(kioskId);
     setActiveView('SCREEN_SIMULATOR');
   };
+
+  const isScreenRoute =
+    window.location.pathname === '/screen' ||
+    window.location.pathname === '/display' ||
+    new URLSearchParams(window.location.search).get('view') === 'screen';
+
+  if (isScreenRoute) {
+    return <PureKioskScreen />;
+  }
 
   return (
     <div className="app-container">
