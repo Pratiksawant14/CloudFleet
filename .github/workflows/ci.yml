@@ -1,4 +1,4 @@
-name: CloudFleet CI/CD
+name: CloudFleet CI/CD & AWS Deployment
 
 on:
   push:
@@ -33,6 +33,9 @@ jobs:
       - name: Type Check & Build Simulator
         run: npm run build --workspace=simulator
 
+      - name: Run Backend Unit & Integration Tests
+        run: npm test --workspace=backend
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -44,3 +47,53 @@ jobs:
           terraform init -backend=false
           terraform validate
 
+  deploy-to-aws:
+    name: Deploy to Real AWS via Terraform
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies & Build Backend Distribution
+        run: |
+          npm ci
+          npm run build --workspace=backend
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Check AWS Credentials
+        id: check-creds
+        run: |
+          if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+            echo "::warning ::AWS Credentials (AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY) are not set in GitHub Secrets. Skipping live AWS deployment."
+            echo "has_creds=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_creds=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Terraform Init & Apply
+        if: steps.check-creds.outputs.has_creds == 'true'
+        run: |
+          cd terraform
+          terraform init
+          terraform apply -auto-approve
+          echo "============================================="
+          echo "LIVE AWS DEPLOYMENT SUCCESSFUL!"
+          echo "============================================="
+          terraform output
