@@ -133,5 +133,69 @@ describe('CloudFleet Kiosk Management & Sync Service Tests', () => {
     assert.equal(history[0].version, '2.5.0');
     assert.equal(history[0].success, true);
   });
+
+  it('CampaignService should re-activate an older campaign and promote it to active live', async () => {
+    const campA = await CampaignService.createCampaign({
+      name: 'Spring Clearance',
+      version: '1.2.0',
+      headline: 'Clearance: 40% Off',
+      targetKiosks: ['ALL'],
+    });
+
+    const campB = await CampaignService.createCampaign({
+      name: 'Summer Splash',
+      version: '1.3.0',
+      headline: 'Splash Deals: 50% Off',
+      targetKiosks: ['ALL'],
+    });
+
+    // campB is newest right now
+    const latestBefore = await CampaignService.getLatestCampaignForKiosk('KIOSK-SHOP-001');
+    assert.equal(latestBefore?.campaignId, campB.campaignId);
+
+    // Re-activate older campA
+    const activatedA = await CampaignService.activateCampaign(campA.campaignId);
+    assert.equal(activatedA.status, 'PUBLISHED');
+
+    // Now campA should be latest active!
+    const latestAfter = await CampaignService.getLatestCampaignForKiosk('KIOSK-SHOP-001');
+    assert.equal(latestAfter?.campaignId, campA.campaignId);
+    assert.equal(latestAfter?.version, '1.2.0');
+  });
+
+  it('SyncService should acknowledge local cache hit with 0 cloud bytes transferred', async () => {
+    await KioskService.registerKiosk({
+      kioskId: 'KIOSK-SHOP-001',
+      name: 'Store Kiosk',
+    });
+
+    const campA = await CampaignService.createCampaign({
+      name: 'Spring Clearance',
+      version: '1.2.0',
+      headline: 'Clearance: 40% Off',
+      targetKiosks: ['ALL'],
+    });
+
+    const kioskBefore = await KioskService.getKiosk('KIOSK-SHOP-001');
+    const diskBefore = kioskBefore!.localCache.diskUsageMb;
+
+    // Acknowledge with cache hit
+    const ackResult = await SyncService.acknowledgeSync('KIOSK-SHOP-001', {
+      kioskId: 'KIOSK-SHOP-001',
+      campaignId: campA.campaignId,
+      version: '1.2.0',
+      success: true,
+      downloadDurationMs: 15,
+      cacheHit: true,
+      bytesDownloaded: 0,
+      message: 'Local cache hit - Bypassed S3 download (0 egress bytes)',
+    });
+
+    assert.equal(ackResult.kiosk.activeCampaign.version, '1.2.0');
+    // Disk usage should remain unchanged on cache hit
+    assert.equal(ackResult.kiosk.localCache.diskUsageMb, diskBefore);
+    assert.equal(ackResult.record.cacheHit, true);
+    assert.equal(ackResult.record.bytesDownloaded, 0);
+  });
 });
 

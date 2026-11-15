@@ -85,17 +85,26 @@ export class SyncService {
       kiosk.lastHeartbeat = now;
       kiosk.updatedAt = now;
 
-      // Add downloaded size to local cache
-      const totalDownloadedMb =
-        (campaign?.assets.reduce((acc, a) => acc + (a.sizeBytes || 0), 0) || 0) / (1024 * 1024);
-      kiosk.localCache.diskUsageMb = Number((kiosk.localCache.diskUsageMb + totalDownloadedMb).toFixed(1));
-      kiosk.localCache.totalAssetsCached += campaign?.assets.length || 1;
+      // Add downloaded size to local cache only if new assets were fetched
+      if (!payload.cacheHit) {
+        const totalDownloadedMb =
+          (payload.bytesDownloaded !== undefined
+            ? payload.bytesDownloaded
+            : campaign?.assets.reduce((acc, a) => acc + (a.sizeBytes || 0), 0) || 0) / (1024 * 1024);
+        kiosk.localCache.diskUsageMb = Number((kiosk.localCache.diskUsageMb + totalDownloadedMb).toFixed(1));
+        kiosk.localCache.totalAssetsCached += campaign?.assets.length || 1;
+      }
 
       await storage.putObject(stateKey, kiosk);
 
-      Logger.info('KIOSK_SYNC_SUCCESS', `Kiosk ${kioskId} successfully applied update ${payload.version}`, {
+      Logger.info('KIOSK_SYNC_SUCCESS', `Kiosk ${kioskId} successfully applied update ${payload.version}${payload.cacheHit ? ' (CACHE HIT - 0 Egress Bytes)' : ''}`, {
         deviceId: kioskId,
-        details: { campaignId: payload.campaignId, version: payload.version, durationMs: payload.downloadDurationMs },
+        details: {
+          campaignId: payload.campaignId,
+          version: payload.version,
+          durationMs: payload.downloadDurationMs,
+          cacheHit: Boolean(payload.cacheHit),
+        },
       });
     } else {
       kiosk.status = 'WARNING';
@@ -117,6 +126,8 @@ export class SyncService {
       downloadDurationMs: payload.downloadDurationMs,
       success: payload.success,
       message: payload.message,
+      cacheHit: payload.cacheHit,
+      bytesDownloaded: payload.bytesDownloaded,
     };
 
     const historyKey = `kiosks/${kioskId}/sync_history.json`;

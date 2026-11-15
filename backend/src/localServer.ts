@@ -133,6 +133,24 @@ app.get('/campaigns/:id', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/campaigns/:id/activate', async (req: Request, res: Response) => {
+  try {
+    const campaign = await CampaignService.activateCampaign(req.params.id);
+    res.json({ success: true, message: `Campaign '${campaign.name}' is now active live!`, campaign });
+  } catch (err: unknown) {
+    res.status(400).json({ error: { message: (err as Error).message } });
+  }
+});
+
+app.post('/campaigns/:id/deactivate', async (req: Request, res: Response) => {
+  try {
+    const campaign = await CampaignService.deactivateCampaign(req.params.id);
+    res.json({ success: true, message: `Campaign '${campaign.name}' deactivated.`, campaign });
+  } catch (err: unknown) {
+    res.status(400).json({ error: { message: (err as Error).message } });
+  }
+});
+
 // Real S3 Binary Asset Management
 app.post('/assets/upload', async (req: Request, res: Response) => {
   try {

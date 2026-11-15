@@ -187,22 +187,35 @@ export class SimulatedKiosk {
         console.log(`\n>>> [${this.kioskId}] NEW CLOUD UPDATE DETECTED! <<<`);
         console.log(`[${this.kioskId}] Campaign: "${camp.name}" | Target Version: v${camp.version}`);
         console.log(`[${this.kioskId}] Headline: "${camp.headline}"`);
-        console.log(`[${this.kioskId}] Pulling ${camp.assets.length} media asset(s) from S3 into local disk cache...`);
 
         const downloadStart = Date.now();
         let totalRealBytes = 0;
+        let totalCacheHits = 0;
         const cacheDir = path.resolve(process.cwd(), '.kiosk-cache', this.kioskId);
         if (!fs.existsSync(cacheDir)) {
           fs.mkdirSync(cacheDir, { recursive: true });
         }
 
+        console.log(`[${this.kioskId}] Verifying local edge cache in '${cacheDir}'...`);
+
         for (const asset of camp.assets) {
+          const destFile = path.join(cacheDir, asset.filename);
+
+          // Check if asset already exists in local disk cache
+          if (fs.existsSync(destFile) && fs.statSync(destFile).size > 0) {
+            const stat = fs.statSync(destFile);
+            totalCacheHits++;
+            console.log(`[${this.kioskId}]    ⚡ [LOCAL CACHE HIT] '${asset.filename}' (${(stat.size / 1024).toFixed(1)} KB) already exists on device disk.`);
+            console.log(`[${this.kioskId}]    ⚡ [ZERO CLOUD EGRESS] Bypassed S3 download! 0 Cloud bytes used.`);
+            continue;
+          }
+
+          // Cache miss: download from S3
           try {
-            console.log(`[${this.kioskId}] -> Downloading ${asset.filename} from S3 (${asset.url})...`);
+            console.log(`[${this.kioskId}] -> [CACHE MISS] Downloading ${asset.filename} from S3 (${asset.url})...`);
             const assetRes = await fetch(asset.url);
             if (assetRes.ok) {
               const arrayBuf = await assetRes.arrayBuffer();
-              const destFile = path.join(cacheDir, asset.filename);
               fs.writeFileSync(destFile, Buffer.from(arrayBuf));
               const stat = fs.statSync(destFile);
               totalRealBytes += stat.size;
@@ -214,7 +227,9 @@ export class SimulatedKiosk {
             totalRealBytes += asset.sizeBytes || 1024 * 500;
           }
         }
-        const downloadDurationMs = Math.max(Date.now() - downloadStart, 300);
+
+        const isFullCacheHit = totalCacheHits === camp.assets.length && camp.assets.length > 0;
+        const downloadDurationMs = isFullCacheHit ? 15 : Math.max(Date.now() - downloadStart, 250);
 
         // Switch local screen display
         this.activeCampaign = {
@@ -226,18 +241,25 @@ export class SimulatedKiosk {
           assets: camp.assets,
         };
 
-        const downloadedMb = totalRealBytes > 0
-          ? Number((totalRealBytes / (1024 * 1024)).toFixed(2))
-          : Number((camp.assets.reduce((sum, a) => sum + (a.sizeBytes || 0), 0) / (1024 * 1024)).toFixed(2));
+        if (isFullCacheHit) {
+          console.log(`[${this.kioskId}] ⚡ [INSTANT SWITCH] 100% Local Cache Hit! Bypassed S3 download (0 KB egress).`);
+        } else {
+          const downloadedMb = Number((totalRealBytes / (1024 * 1024)).toFixed(2));
+          this.localCacheDiskUsageMb = Number((this.localCacheDiskUsageMb + downloadedMb).toFixed(1));
+          this.totalAssetsCached += (camp.assets.length - totalCacheHits);
+          console.log(`[${this.kioskId}] Download complete (${downloadedMb} MB saved to local disk cache).`);
+        }
 
-        this.localCacheDiskUsageMb = Number((this.localCacheDiskUsageMb + downloadedMb).toFixed(1));
-        this.totalAssetsCached += camp.assets.length;
-
-        console.log(`[${this.kioskId}] Download complete (${downloadedMb} MB saved to local disk cache).`);
         console.log(`[${this.kioskId}] SCREEN SWITCHED: Now rendering "${this.activeCampaign.headline}" (v${this.activeCampaign.version})`);
 
         // Send acknowledgement to Cloud API
-        await this.postSyncAcknowledgement(camp.campaignId, camp.version, downloadDurationMs);
+        await this.postSyncAcknowledgement(
+          camp.campaignId,
+          camp.version,
+          downloadDurationMs,
+          isFullCacheHit,
+          totalRealBytes
+        );
         return true;
       } else {
         console.log(`[${this.kioskId}] Up to date. Resuming local playback.`);
@@ -254,7 +276,9 @@ export class SimulatedKiosk {
   private async postSyncAcknowledgement(
     campaignId: string,
     version: string,
-    durationMs: number
+    durationMs: number,
+    cacheHit: boolean = false,
+    bytesDownloaded: number = 0
   ): Promise<void> {
     try {
       await fetch(`${this.apiBaseUrl}/kiosks/${this.kioskId}/sync-ack`, {
@@ -266,7 +290,11 @@ export class SimulatedKiosk {
           version,
           success: true,
           downloadDurationMs: durationMs,
-          message: `Assets downloaded from S3 and cached locally. Kiosk screen switched to ${version}.`,
+          cacheHit,
+          bytesDownloaded,
+          message: cacheHit
+            ? `⚡ Local cache hit: 0 S3 egress bytes used. Instantly switched from local disk cache.`
+            : `Assets downloaded from S3 and cached locally. Kiosk screen switched to ${version}.`,
         }),
       });
       console.log(`[${this.kioskId}] Acknowledged update completion to Cloud Backend.`);

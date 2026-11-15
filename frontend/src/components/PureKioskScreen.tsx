@@ -10,7 +10,7 @@ export const PureKioskScreen: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [lastVersion, setLastVersion] = useState<string>('');
+  const [lastCampaignKey, setLastCampaignKey] = useState<string>('');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const hideControlsTimeout = useRef<any>(null);
@@ -47,14 +47,15 @@ export const PureKioskScreen: React.FC = () => {
     if (!selectedKioskId) return;
     const kiosk = kiosks.find((k) => k.kioskId === selectedKioskId) || null;
     if (kiosk) {
-      if (lastVersion && kiosk.activeCampaign.version !== lastVersion) {
+      const currentKey = `${kiosk.activeCampaign.campaignId}_${kiosk.activeCampaign.version}`;
+      if (lastCampaignKey && currentKey !== lastCampaignKey) {
         setIsUpdating(true);
-        setTimeout(() => setIsUpdating(false), 1800);
+        setTimeout(() => setIsUpdating(false), 1200);
       }
-      setLastVersion(kiosk.activeCampaign.version);
+      setLastCampaignKey(currentKey);
       setCurrentKiosk(kiosk);
     }
-  }, [selectedKioskId, kiosks, lastVersion]);
+  }, [selectedKioskId, kiosks, lastCampaignKey]);
 
   // Handle Fullscreen edge-to-edge
   const toggleFullscreen = () => {

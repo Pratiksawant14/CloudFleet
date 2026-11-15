@@ -70,6 +70,8 @@ export interface SyncAckPayload {
   success: boolean;
   downloadDurationMs: number;
   message: string;
+  cacheHit?: boolean;
+  bytesDownloaded?: number;
 }
 
 export interface SyncHistoryRecord {
@@ -81,6 +83,8 @@ export interface SyncHistoryRecord {
   downloadDurationMs: number;
   success: boolean;
   message: string;
+  cacheHit?: boolean;
+  bytesDownloaded?: number;
 }
 
 export interface KioskRegistry {

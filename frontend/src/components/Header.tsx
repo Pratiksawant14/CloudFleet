@@ -1,5 +1,5 @@
 import React from 'react';
-import { MonitorPlay, RefreshCw, Plus, Terminal, UploadCloud, Monitor, LayoutDashboard, Tv } from 'lucide-react';
+import { MonitorPlay, RefreshCw, Plus, Terminal, UploadCloud, Monitor, LayoutDashboard, Tv, FolderArchive } from 'lucide-react';
 import { ApiService } from '../services/api';
 
 interface HeaderProps {
@@ -8,6 +8,7 @@ interface HeaderProps {
   onViewChange: (view: 'OPERATIONS' | 'SCREEN_SIMULATOR') => void;
   onRefresh: () => void;
   onOpenCampaignModal: () => void;
+  onOpenCampaignLibrary: () => void;
   onOpenRegisterModal: () => void;
   onOpenSimulatorGuide: () => void;
 }
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   onViewChange,
   onRefresh,
   onOpenCampaignModal,
+  onOpenCampaignLibrary,
   onOpenRegisterModal,
   onOpenSimulatorGuide,
 }) => {
@@ -106,6 +108,16 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Tv size={14} />
           <span>Open TV Screen</span>
+        </button>
+
+        <button
+          className="btn-secondary"
+          onClick={onOpenCampaignLibrary}
+          title="Browse all past campaigns staged in Amazon S3 & 1-click re-activate"
+          style={{ color: '#c084fc', borderColor: 'rgba(192, 132, 252, 0.3)' }}
+        >
+          <FolderArchive size={14} />
+          <span>Campaign Library</span>
         </button>
 
         <button className="btn-secondary" onClick={onOpenSimulatorGuide} title="Simulator Guide">

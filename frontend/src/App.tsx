@@ -6,6 +6,7 @@ import { KioskDetail } from './components/KioskDetail';
 import { KioskScreenSimulator } from './components/KioskScreenSimulator';
 import { PureKioskScreen } from './components/PureKioskScreen';
 import { CampaignModal } from './components/CampaignModal';
+import { CampaignLibraryModal } from './components/CampaignLibraryModal';
 import { RegisterKioskModal } from './components/RegisterKioskModal';
 import { SimulatorGuideModal } from './components/SimulatorGuideModal';
 import { ApiService } from './services/api';
@@ -22,6 +23,7 @@ export const App: React.FC = () => {
 
   // Modals
   const [isCampaignOpen, setIsCampaignOpen] = useState(false);
+  const [isCampaignLibraryOpen, setIsCampaignLibraryOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
@@ -32,7 +34,7 @@ export const App: React.FC = () => {
     setToastMessage(message);
     setTimeout(() => {
       setToastMessage((cur) => (cur === message ? null : cur));
-    }, 4000);
+    }, 4500);
   };
 
   const fetchFleet = async () => {
@@ -53,6 +55,11 @@ export const App: React.FC = () => {
 
   const handleCampaignPublished = (name: string, version: string) => {
     showToast(`Campaign "${name}" (v${version}) published to Amazon S3! Kiosks will auto-sync.`);
+    fetchFleet();
+  };
+
+  const handleCampaignActivated = (name: string, version: string) => {
+    showToast(`🚀 Campaign "${name}" (v${version}) is now LIVE! Kiosks with cached assets switch instantly without S3 download.`);
     fetchFleet();
   };
 
@@ -87,6 +94,7 @@ export const App: React.FC = () => {
         }}
         onRefresh={fetchFleet}
         onOpenCampaignModal={() => setIsCampaignOpen(true)}
+        onOpenCampaignLibrary={() => setIsCampaignLibraryOpen(true)}
         onOpenRegisterModal={() => setIsRegisterOpen(true)}
         onOpenSimulatorGuide={() => setIsGuideOpen(true)}
       />
@@ -111,6 +119,7 @@ export const App: React.FC = () => {
             <FleetOverview
               summary={fleetSummary}
               onFilterClick={(status) => setSelectedFilter(status)}
+              onOpenCampaignLibrary={() => setIsCampaignLibraryOpen(true)}
             />
             <KioskTable
               kiosks={fleetSummary?.kiosks || []}
@@ -127,6 +136,13 @@ export const App: React.FC = () => {
         isOpen={isCampaignOpen}
         onClose={() => setIsCampaignOpen(false)}
         onCampaignPublished={handleCampaignPublished}
+      />
+
+      <CampaignLibraryModal
+        isOpen={isCampaignLibraryOpen}
+        onClose={() => setIsCampaignLibraryOpen(false)}
+        onCampaignActivated={handleCampaignActivated}
+        onOpenCreateCampaign={() => setIsCampaignOpen(true)}
       />
 
       <RegisterKioskModal

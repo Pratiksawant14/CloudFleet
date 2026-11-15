@@ -132,14 +132,57 @@ export class CampaignService {
       }
     }
 
-    // Sort newest first
-    campaigns.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Sort newest active/published first
+    campaigns.sort((a, b) => {
+      const timeA = new Date(a.publishedAt || a.createdAt).getTime();
+      const timeB = new Date(b.publishedAt || b.createdAt).getTime();
+      return timeB - timeA;
+    });
     return campaigns;
   }
 
   static async getCampaign(campaignId: string): Promise<CampaignManifest | null> {
     const storage = getStorageProvider();
     return storage.getObject<CampaignManifest>(`campaigns/${campaignId}/manifest.json`);
+  }
+
+  static async activateCampaign(campaignId: string): Promise<CampaignManifest> {
+    const storage = getStorageProvider();
+    const manifestKey = `campaigns/${campaignId}/manifest.json`;
+    const campaign = await storage.getObject<CampaignManifest>(manifestKey);
+    if (!campaign) {
+      throw new Error(`Campaign '${campaignId}' not found.`);
+    }
+
+    const now = new Date().toISOString();
+    campaign.status = 'PUBLISHED';
+    campaign.publishedAt = now;
+
+    await storage.putObject(manifestKey, campaign);
+
+    Logger.info('CAMPAIGN_ACTIVATED', `Campaign ${campaign.name} (${campaign.version}) re-activated`, {
+      details: { campaignId, version: campaign.version, headline: campaign.headline },
+    });
+
+    return campaign;
+  }
+
+  static async deactivateCampaign(campaignId: string): Promise<CampaignManifest> {
+    const storage = getStorageProvider();
+    const manifestKey = `campaigns/${campaignId}/manifest.json`;
+    const campaign = await storage.getObject<CampaignManifest>(manifestKey);
+    if (!campaign) {
+      throw new Error(`Campaign '${campaignId}' not found.`);
+    }
+
+    campaign.status = 'ARCHIVED';
+    await storage.putObject(manifestKey, campaign);
+
+    Logger.info('CAMPAIGN_DEACTIVATED', `Campaign ${campaign.name} (${campaign.version}) set to ARCHIVED`, {
+      details: { campaignId, version: campaign.version },
+    });
+
+    return campaign;
   }
 
   static async getLatestCampaignForKiosk(kioskId: string): Promise<CampaignManifest | null> {

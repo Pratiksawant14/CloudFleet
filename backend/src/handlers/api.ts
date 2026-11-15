@@ -113,6 +113,20 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       return jsonResponse(200, { campaigns, total: campaigns.length });
     }
 
+    const campaignActivateMatch = rawPath.match(/^\/campaigns\/([A-Za-z0-9_-]+)\/activate$/);
+    if (method === 'POST' && campaignActivateMatch) {
+      const campaignId = campaignActivateMatch[1];
+      const campaign = await CampaignService.activateCampaign(campaignId);
+      return jsonResponse(200, { success: true, message: `Campaign '${campaign.name}' is now active live!`, campaign });
+    }
+
+    const campaignDeactivateMatch = rawPath.match(/^\/campaigns\/([A-Za-z0-9_-]+)\/deactivate$/);
+    if (method === 'POST' && campaignDeactivateMatch) {
+      const campaignId = campaignDeactivateMatch[1];
+      const campaign = await CampaignService.deactivateCampaign(campaignId);
+      return jsonResponse(200, { success: true, message: `Campaign '${campaign.name}' deactivated.`, campaign });
+    }
+
     const campaignDetailMatch = rawPath.match(/^\/campaigns\/([A-Za-z0-9_-]+)$/);
     if (method === 'GET' && campaignDetailMatch) {
       const campaignId = campaignDetailMatch[1];

@@ -5,9 +5,14 @@ import { FleetSummary } from '../types';
 interface FleetOverviewProps {
   summary: FleetSummary | null;
   onFilterClick?: (status: 'ALL' | 'ONLINE' | 'SYNCING' | 'OFFLINE') => void;
+  onOpenCampaignLibrary?: () => void;
 }
 
-export const FleetOverview: React.FC<FleetOverviewProps> = ({ summary, onFilterClick }) => {
+export const FleetOverview: React.FC<FleetOverviewProps> = ({
+  summary,
+  onFilterClick,
+  onOpenCampaignLibrary,
+}) => {
   const total = summary?.total ?? 0;
   const online = summary?.online ?? 0;
   const syncing = summary?.syncing ?? 0;
@@ -74,7 +79,12 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({ summary, onFilterC
         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Heartbeat timeout exceeded</span>
       </div>
 
-      <div className="kpi-card alerts">
+      <div
+        className="kpi-card alerts"
+        style={{ cursor: onOpenCampaignLibrary ? 'pointer' : 'default' }}
+        onClick={() => onOpenCampaignLibrary && onOpenCampaignLibrary()}
+        title="Click to view all past campaigns & 1-click re-activate"
+      >
         <div className="kpi-header">
           <span>CAMPAIGNS ON S3</span>
           <Sparkles size={18} color="#c084fc" />
@@ -82,7 +92,7 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({ summary, onFilterC
         <div className="kpi-value" style={{ color: '#c084fc' }}>
           {activeCampaigns}
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Staged on Amazon S3</span>
+        <span style={{ fontSize: '0.75rem', color: '#c084fc' }}>Browse Library & History ↗</span>
       </div>
     </div>
   );

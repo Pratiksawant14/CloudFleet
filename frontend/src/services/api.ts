@@ -57,6 +57,30 @@ export class ApiService {
     return data.campaigns || [];
   }
 
+  static async activateCampaign(campaignId: string): Promise<{ success: boolean; message: string; campaign: CampaignManifest }> {
+    const res = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/activate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Failed to activate campaign (${res.status})`);
+    }
+    return res.json();
+  }
+
+  static async deactivateCampaign(campaignId: string): Promise<{ success: boolean; message: string; campaign: CampaignManifest }> {
+    const res = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/deactivate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Failed to deactivate campaign (${res.status})`);
+    }
+    return res.json();
+  }
+
   static async createCampaign(data: {
     name: string;
     version: string;

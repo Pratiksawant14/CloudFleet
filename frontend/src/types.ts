@@ -72,6 +72,8 @@ export interface SyncHistoryRecord {
   downloadDurationMs: number;
   success: boolean;
   message: string;
+  cacheHit?: boolean;
+  bytesDownloaded?: number;
 }
 
 export interface FleetSummary {
