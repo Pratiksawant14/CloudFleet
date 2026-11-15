@@ -134,3 +134,4 @@ describe('CloudFleet Kiosk Management & Sync Service Tests', () => {
     assert.equal(history[0].success, true);
   });
 });
+

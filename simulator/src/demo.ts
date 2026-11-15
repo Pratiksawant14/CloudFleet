@@ -1,4 +1,7 @@
 import { SimulatedKiosk } from './kioskDevice.js';
+import { fork, ChildProcess } from 'node:child_process';
+import path from 'node:path';
+import fs from 'node:fs';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:4000';
 
@@ -12,19 +15,86 @@ function logStep(stepNum: number, title: string) {
   console.log(`============================================================`);
 }
 
+let autoStartedServer: ChildProcess | null = null;
+
+function findBackendServerScript(): string | null {
+  const candidates = [
+    path.resolve(process.cwd(), 'backend/dist/localServer.js'),
+    path.resolve(process.cwd(), '../backend/dist/localServer.js'),
+    path.resolve(__dirname, '../../backend/dist/localServer.js'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) {
+      return c;
+    }
+  }
+  return null;
+}
+
+async function ensureBackendRunning(): Promise<void> {
+  // Check if backend is already listening
+  try {
+    const res = await fetch(`${API_BASE_URL}/health`, { signal: AbortSignal.timeout(1200) });
+    if (res.ok) {
+      return;
+    }
+  } catch {
+    // Backend not running
+  }
+
+  // If local URL, automatically launch the localServer
+  if (API_BASE_URL.includes('localhost:4000') || API_BASE_URL.includes('127.0.0.1:4000')) {
+    const serverScript = findBackendServerScript();
+    if (serverScript) {
+      console.log('[AUTO-START] Local backend server is not running on port 4000.');
+      console.log('[AUTO-START] Automatically starting local backend server for demonstration...');
+
+      autoStartedServer = fork(serverScript, [], {
+        stdio: 'pipe',
+        env: { ...process.env, PORT: '4000' },
+      });
+
+      const deadline = Date.now() + 8000;
+      while (Date.now() < deadline) {
+        await delay(600);
+        try {
+          const res = await fetch(`${API_BASE_URL}/health`, { signal: AbortSignal.timeout(1000) });
+          if (res.ok) {
+            console.log('[AUTO-START] Local backend server is ready!\n');
+            return;
+          }
+        } catch {
+          // Keep waiting
+        }
+      }
+    }
+  }
+
+  throw new Error(
+    `Cannot connect to Backend API at ${API_BASE_URL}.\n\n` +
+      `💡 How to fix:\n` +
+      `   Start the backend in another terminal by running:\n` +
+      `   npm run dev:backend\n\n` +
+      `   Then run this demo again: npm run simulate:demo\n`
+  );
+}
+
 async function runDemo() {
   console.log('\n============================================================');
   console.log('   CLOUDFLEET — SERVERLESS EDGE KIOSK UPDATE DEMONSTRATION  ');
   console.log('============================================================\n');
 
-  // Step 1: Health check
-  logStep(1, 'Verify Cloud API Gateway / Serverless Ingress');
-  const healthRes = await fetch(`${API_BASE_URL}/health`);
-  if (!healthRes.ok) {
-    throw new Error(`Cloud API not reachable at ${API_BASE_URL}/health. Make sure backend is running!`);
-  }
-  const healthData = (await healthRes.json()) as any;
-  console.log('Backend Status:', healthData);
+  try {
+    await ensureBackendRunning();
+
+    // Step 1: Health check
+    logStep(1, 'Verify Cloud API Gateway / Serverless Ingress');
+    const healthRes = await fetch(`${API_BASE_URL}/health`);
+    if (!healthRes.ok) {
+      throw new Error(`Cloud API not healthy at ${API_BASE_URL}/health`);
+    }
+    const healthData = (await healthRes.json()) as any;
+    console.log('Backend Status:', healthData);
 
   // Step 2: Show initial fleet status
   logStep(2, 'Inspect Kiosk Fleet Status');
@@ -146,9 +216,20 @@ async function runDemo() {
   console.log('  [x] S3 Central Asset Repository: Heavy media assets hosted on S3 and cached on edge');
   console.log('  [x] Seamless Version Propagation: Admin updates S3 -> Kiosks auto-sync & switch screens');
   console.log('  [x] End-to-End Auditability: Complete sync history and acknowledgements persisted\n');
+  } finally {
+    if (autoStartedServer) {
+      console.log('[AUTO-STOP] Shutting down auto-started backend server...');
+      autoStartedServer.kill();
+      // Allow graceful shutdown
+      await delay(500);
+    }
+  }
 }
 
 runDemo().catch((err) => {
-  console.error('\nDEMO FAILED:', err);
+  console.error('\n============================================================');
+  console.error('DEMO FAILED:');
+  console.error(err.message || err);
+  console.error('============================================================');
   process.exit(1);
 });

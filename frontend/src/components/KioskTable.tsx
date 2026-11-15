@@ -176,3 +176,4 @@ export const KioskTable: React.FC<KioskTableProps> = ({
     </div>
   );
 };
+

@@ -186,3 +186,4 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
     </div>
   );
 };
+

@@ -140,3 +140,4 @@ export const RegisterKioskModal: React.FC<RegisterKioskModalProps> = ({
     </div>
   );
 };
+

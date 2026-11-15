@@ -307,3 +307,4 @@ export const KioskDetail: React.FC<KioskDetailProps> = ({ kioskId, onBack, onSho
     </div>
   );
 };
+
