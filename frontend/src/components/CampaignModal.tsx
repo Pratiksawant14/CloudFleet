@@ -35,6 +35,25 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
 
   const [selectedPreset, setSelectedPreset] = useState<'NONE' | 'SALE' | 'WELCOME'>('SALE');
 
+  // Auto-suggest next version when modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      ApiService.getCampaigns()
+        .then((campaigns) => {
+          if (campaigns && campaigns.length > 0) {
+            const latestVer = (campaigns[0].version || '2.0.0').replace(/^v/i, '');
+            const parts = latestVer.split('.').map(Number);
+            if (parts.length === 3 && !parts.some(isNaN)) {
+              setVersion(`${parts[0]}.${parts[1]}.${parts[2] + 1}`);
+            } else {
+              setVersion(`2.0.${campaigns.length + 1}`);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

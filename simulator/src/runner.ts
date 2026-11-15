@@ -15,7 +15,7 @@ async function main() {
       location: 'Flagship Store - Bay 1',
       kioskType: 'RETAIL_KIOSK',
       apiBaseUrl: API_BASE_URL,
-      updateCheckIntervalMs: 8000,
+      updateCheckIntervalMs: 4000,
     }),
     new SimulatedKiosk({
       kioskId: 'KIOSK-MALL-002',
@@ -23,7 +23,7 @@ async function main() {
       location: 'Mall Atrium - Central Promenade',
       kioskType: 'INTERACTIVE_SCREEN',
       apiBaseUrl: API_BASE_URL,
-      updateCheckIntervalMs: 10000,
+      updateCheckIntervalMs: 5000,
     }),
     new SimulatedKiosk({
       kioskId: 'KIOSK-AIRPORT-003',
@@ -31,7 +31,7 @@ async function main() {
       location: 'Terminal 2 - Departure Lounge',
       kioskType: 'DIGITAL_SIGNAGE',
       apiBaseUrl: API_BASE_URL,
-      updateCheckIntervalMs: 12000,
+      updateCheckIntervalMs: 5000,
     }),
   ];
 

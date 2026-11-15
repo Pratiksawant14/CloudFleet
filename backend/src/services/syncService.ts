@@ -27,7 +27,13 @@ export class SyncService {
       return { hasUpdate: false, currentVersion: versionToCheck };
     }
 
-    const hasUpdate = latestCampaign.version !== versionToCheck;
+    const cleanLatestVer = (latestCampaign.version || '').replace(/^v/i, '').trim();
+    const cleanCurrentVer = (versionToCheck || '').replace(/^v/i, '').trim();
+
+    // Trigger update if version changed OR if a new campaign ID was published
+    const hasUpdate =
+      cleanLatestVer !== cleanCurrentVer ||
+      Boolean(latestCampaign.campaignId && latestCampaign.campaignId !== kiosk.activeCampaign.campaignId);
 
     if (hasUpdate) {
       // Transition kiosk status to SYNCING
