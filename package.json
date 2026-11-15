@@ -1,0 +1,29 @@
+{
+  "name": "cloudfleet",
+  "version": "1.0.0",
+  "description": "CloudFleet — Serverless IoT Fleet Management System",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "simulator"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces --if-present",
+    "dev:backend": "npm --workspace=backend run dev",
+    "dev:frontend": "npm --workspace=frontend run dev",
+    "dev:simulator": "npm --workspace=simulator run start",
+    "simulate:demo": "npm --workspace=simulator run demo"
+  },
+  "keywords": [
+    "iot",
+    "fleet-management",
+    "serverless",
+    "aws-lambda",
+    "amazon-s3",
+    "terraform"
+  ],
+  "author": "CloudFleet Team",
+  "license": "MIT"
+}

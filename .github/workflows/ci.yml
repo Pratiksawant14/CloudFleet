@@ -1,0 +1,45 @@
+name: CloudFleet CI/CD
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    name: Build & Test CloudFleet Workspaces
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Type Check & Build Backend
+        run: npm run build --workspace=backend
+
+      - name: Type Check & Build Frontend
+        run: npm run build --workspace=frontend
+
+      - name: Type Check & Build Simulator
+        run: npm run build --workspace=simulator
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Validate Terraform Configuration
+        run: |
+          cd terraform
+          terraform init -backend=false
+          terraform validate

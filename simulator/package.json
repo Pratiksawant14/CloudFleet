@@ -1,0 +1,17 @@
+{
+  "name": "@cloudfleet/simulator",
+  "version": "1.0.0",
+  "description": "CloudFleet Standalone Software IoT Device Simulator",
+  "main": "dist/runner.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/runner.ts",
+    "demo": "tsx src/demo.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
