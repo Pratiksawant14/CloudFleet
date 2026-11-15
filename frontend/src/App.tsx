@@ -5,8 +5,8 @@ import { KioskTable } from './components/KioskTable';
 import { KioskDetail } from './components/KioskDetail';
 import { KioskScreenSimulator } from './components/KioskScreenSimulator';
 import { PureKioskScreen } from './components/PureKioskScreen';
+import { CampaignStudio } from './components/CampaignStudio';
 import { CampaignModal } from './components/CampaignModal';
-import { CampaignLibraryModal } from './components/CampaignLibraryModal';
 import { RegisterKioskModal } from './components/RegisterKioskModal';
 import { SimulatorGuideModal } from './components/SimulatorGuideModal';
 import { ApiService } from './services/api';
@@ -14,7 +14,7 @@ import { FleetSummary } from './types';
 import { CheckCircle2 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<'OPERATIONS' | 'SCREEN_SIMULATOR'>('OPERATIONS');
+  const [activeView, setActiveView] = useState<'OPERATIONS' | 'CAMPAIGNS' | 'SCREEN_SIMULATOR'>('OPERATIONS');
   const [selectedKioskId, setSelectedKioskId] = useState<string | null>(null);
   const [simulatorKioskId, setSimulatorKioskId] = useState<string | undefined>(undefined);
   const [fleetSummary, setFleetSummary] = useState<FleetSummary | null>(null);
@@ -23,7 +23,6 @@ export const App: React.FC = () => {
 
   // Modals
   const [isCampaignOpen, setIsCampaignOpen] = useState(false);
-  const [isCampaignLibraryOpen, setIsCampaignLibraryOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
@@ -54,12 +53,12 @@ export const App: React.FC = () => {
   }, []);
 
   const handleCampaignPublished = (name: string, version: string) => {
-    showToast(`Campaign "${name}" (v${version}) published to Amazon S3! Kiosks will auto-sync.`);
+    showToast(`Campaign "${name}" (v${version}) deployed to Amazon S3! Edge fleet will auto-sync.`);
     fetchFleet();
   };
 
   const handleCampaignActivated = (name: string, version: string) => {
-    showToast(`🚀 Campaign "${name}" (v${version}) is now LIVE! Kiosks with cached assets switch instantly without S3 download.`);
+    showToast(`⚡ Campaign "${name}" (v${version}) is now LIVE! Edge kiosks with cached assets switch in ~15ms with 0 S3 download.`);
     fetchFleet();
   };
 
@@ -94,13 +93,18 @@ export const App: React.FC = () => {
         }}
         onRefresh={fetchFleet}
         onOpenCampaignModal={() => setIsCampaignOpen(true)}
-        onOpenCampaignLibrary={() => setIsCampaignLibraryOpen(true)}
         onOpenRegisterModal={() => setIsRegisterOpen(true)}
         onOpenSimulatorGuide={() => setIsGuideOpen(true)}
       />
 
       <main className="main-content">
-        {activeView === 'SCREEN_SIMULATOR' ? (
+        {activeView === 'CAMPAIGNS' ? (
+          <CampaignStudio
+            onOpenCreateCampaign={() => setIsCampaignOpen(true)}
+            onCampaignActivated={handleCampaignActivated}
+            onSwitchToOperations={() => setActiveView('OPERATIONS')}
+          />
+        ) : activeView === 'SCREEN_SIMULATOR' ? (
           <KioskScreenSimulator
             initialKioskId={simulatorKioskId || fleetSummary?.kiosks[0]?.kioskId}
             onSwitchToOperations={() => setActiveView('OPERATIONS')}
@@ -119,7 +123,7 @@ export const App: React.FC = () => {
             <FleetOverview
               summary={fleetSummary}
               onFilterClick={(status) => setSelectedFilter(status)}
-              onOpenCampaignLibrary={() => setIsCampaignLibraryOpen(true)}
+              onNavigateToCampaigns={() => setActiveView('CAMPAIGNS')}
             />
             <KioskTable
               kiosks={fleetSummary?.kiosks || []}
@@ -132,17 +136,11 @@ export const App: React.FC = () => {
         )}
       </main>
 
+      {/* Glassmorphic Modals with Fixed High Z-Index Overlays */}
       <CampaignModal
         isOpen={isCampaignOpen}
         onClose={() => setIsCampaignOpen(false)}
         onCampaignPublished={handleCampaignPublished}
-      />
-
-      <CampaignLibraryModal
-        isOpen={isCampaignLibraryOpen}
-        onClose={() => setIsCampaignLibraryOpen(false)}
-        onCampaignActivated={handleCampaignActivated}
-        onOpenCreateCampaign={() => setIsCampaignOpen(true)}
       />
 
       <RegisterKioskModal

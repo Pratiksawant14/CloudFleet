@@ -67,9 +67,9 @@ export const KioskDetail: React.FC<KioskDetailProps> = ({ kioskId, onBack, onSho
 
   return (
     <div>
-      <button className="back-btn" onClick={onBack}>
-        <ArrowLeft size={16} />
-        Back to Kiosk Fleet
+      <button className="btn-ghost" onClick={onBack} style={{ marginBottom: '1.25rem' }}>
+        <ArrowLeft size={14} />
+        <span>Back to Kiosk Fleet</span>
       </button>
 
       <div className="detail-header">

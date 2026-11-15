@@ -161,41 +161,41 @@ export const KioskScreenSimulator: React.FC<KioskScreenSimulatorProps> = ({
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <button
-            className="btn-secondary"
+            className="btn-ghost"
             onClick={() => setShowArchitectureHud(!showArchitectureHud)}
-            style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}
+            style={{ fontSize: '0.78rem' }}
           >
-            <Layers size={14} />
-            {showArchitectureHud ? 'Hide Architecture HUD' : 'Show Architecture HUD'}
+            <Layers size={13} />
+            <span>{showArchitectureHud ? 'Hide Architecture HUD' : 'Show Architecture HUD'}</span>
           </button>
 
           <button
-            className="btn-secondary"
+            className="btn-ghost btn-ghost-cyan"
             onClick={() => window.open(`/screen?id=${selectedKioskId}`, '_blank')}
-            style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem', color: 'var(--accent-cyan)' }}
+            style={{ fontSize: '0.78rem' }}
             title="Open pure edge-to-edge TV screen in a new window"
           >
-            <ExternalLink size={14} />
-            Open Dedicated TV URL
+            <ExternalLink size={13} />
+            <span>Dedicated TV URL</span>
           </button>
 
           <button
-            className="btn-secondary"
+            className="btn-ghost"
             onClick={toggleFullscreen}
-            style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}
+            style={{ fontSize: '0.78rem' }}
           >
-            {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen TV Mode'}
+            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen TV'}</span>
           </button>
 
           <button
-            className="btn-primary"
+            className="btn-ghost btn-ghost-gold"
             onClick={onSwitchToOperations}
-            style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}
+            style={{ fontSize: '0.78rem', fontWeight: 700 }}
           >
-            🏢 Fleet Ops Center
+            <span>Fleet Ops →</span>
           </button>
         </div>
       </div>

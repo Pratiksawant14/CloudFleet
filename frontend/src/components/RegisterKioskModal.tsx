@@ -126,12 +126,12 @@ export const RegisterKioskModal: React.FC<RegisterKioskModalProps> = ({
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-            <button type="button" className="btn-secondary" onClick={onClose}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
+            <button type="button" className="btn-ghost" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn-primary" disabled={loading}>
-              <Plus size={16} />
+            <button type="submit" className="btn-ghost btn-ghost-cyan" disabled={loading} style={{ fontWeight: 700 }}>
+              <Plus size={15} />
               <span>{loading ? 'Provisioning...' : 'Register Kiosk'}</span>
             </button>
           </div>

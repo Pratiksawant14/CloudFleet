@@ -372,12 +372,12 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({
             </div>
           </div>
 
-          <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
-            <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
+            <button type="button" className="btn-ghost" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="btn-primary" disabled={loading} style={{ minWidth: '170px' }}>
-              {loading ? 'Uploading to S3...' : 'Publish to Amazon S3'}
+            <button type="submit" className="btn-ghost btn-ghost-gold" disabled={loading} style={{ minWidth: '180px', fontWeight: 700 }}>
+              {loading ? 'Uploading to S3...' : 'Upload & Deploy to S3'}
             </button>
           </div>
         </form>

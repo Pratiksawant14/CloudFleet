@@ -60,8 +60,8 @@ export const SimulatorGuideModal: React.FC<SimulatorGuideModalProps> = ({ isOpen
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-          <button className="btn-primary" onClick={onClose}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
+          <button className="btn-ghost btn-ghost-cyan" onClick={onClose} style={{ fontWeight: 600 }}>
             Got it
           </button>
         </div>

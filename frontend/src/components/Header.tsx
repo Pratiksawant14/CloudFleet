@@ -1,14 +1,23 @@
 import React from 'react';
-import { MonitorPlay, RefreshCw, Plus, Terminal, UploadCloud, Monitor, LayoutDashboard, Tv, FolderArchive } from 'lucide-react';
+import {
+  MonitorPlay,
+  RefreshCw,
+  Plus,
+  Terminal,
+  UploadCloud,
+  Monitor,
+  LayoutDashboard,
+  Tv,
+  Sparkles,
+} from 'lucide-react';
 import { ApiService } from '../services/api';
 
 interface HeaderProps {
   backendConnected: boolean;
-  activeView: 'OPERATIONS' | 'SCREEN_SIMULATOR';
-  onViewChange: (view: 'OPERATIONS' | 'SCREEN_SIMULATOR') => void;
+  activeView: 'OPERATIONS' | 'CAMPAIGNS' | 'SCREEN_SIMULATOR';
+  onViewChange: (view: 'OPERATIONS' | 'CAMPAIGNS' | 'SCREEN_SIMULATOR') => void;
   onRefresh: () => void;
   onOpenCampaignModal: () => void;
-  onOpenCampaignLibrary: () => void;
   onOpenRegisterModal: () => void;
   onOpenSimulatorGuide: () => void;
 }
@@ -19,124 +28,87 @@ export const Header: React.FC<HeaderProps> = ({
   onViewChange,
   onRefresh,
   onOpenCampaignModal,
-  onOpenCampaignLibrary,
   onOpenRegisterModal,
   onOpenSimulatorGuide,
 }) => {
   return (
     <header className="app-header">
-      <div className="brand-section">
-        <div className="brand-logo" style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}>
-          <MonitorPlay size={20} />
+      {/* Brand Monogram & Title */}
+      <div className="brand-section" onClick={() => onViewChange('OPERATIONS')} style={{ cursor: 'pointer' }}>
+        <div className="brand-logo">
+          <MonitorPlay size={18} />
         </div>
         <div>
-          <h1 className="brand-title">CloudFleet</h1>
-          <span className="brand-subtitle">Serverless Edge Kiosk & Signage Fleet</span>
+          <h1 className="brand-title">CLOUDFLEET</h1>
+          <span className="brand-subtitle">Serverless Edge Kiosk & Signage</span>
         </div>
       </div>
 
-      {/* Navigation View Switcher (Dashboard vs Screen Simulator) */}
-      <div
-        style={{
-          display: 'flex',
-          backgroundColor: 'rgba(15, 23, 42, 0.8)',
-          padding: '0.25rem',
-          borderRadius: '8px',
-          border: '1px solid var(--border-subtle)',
-          gap: '0.25rem',
-        }}
-      >
+      {/* Navigation Switcher (Luxury Spaced Minimalist Tabs) */}
+      <nav className="nav-switcher">
         <button
           onClick={() => onViewChange('OPERATIONS')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.35rem 0.85rem',
-            borderRadius: '6px',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            backgroundColor: activeView === 'OPERATIONS' ? '#2563eb' : 'transparent',
-            color: activeView === 'OPERATIONS' ? '#ffffff' : 'var(--text-secondary)',
-            border: 'none',
-          }}
+          className={`nav-tab-btn ${activeView === 'OPERATIONS' ? 'active' : ''}`}
         >
           <LayoutDashboard size={14} />
-          <span>Fleet Ops Center</span>
+          <span>Fleet Ops</span>
+        </button>
+
+        <button
+          onClick={() => onViewChange('CAMPAIGNS')}
+          className={`nav-tab-btn ${activeView === 'CAMPAIGNS' ? 'active' : ''}`}
+        >
+          <Sparkles size={14} />
+          <span>Campaign Studio (S3)</span>
         </button>
 
         <button
           onClick={() => onViewChange('SCREEN_SIMULATOR')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.35rem 0.85rem',
-            borderRadius: '6px',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            backgroundColor: activeView === 'SCREEN_SIMULATOR' ? '#7c3aed' : 'transparent',
-            color: activeView === 'SCREEN_SIMULATOR' ? '#ffffff' : 'var(--text-secondary)',
-            border: 'none',
-          }}
+          className={`nav-tab-btn ${activeView === 'SCREEN_SIMULATOR' ? 'active' : ''}`}
         >
           <Monitor size={14} />
-          <span>Live Kiosk Screen Simulator</span>
+          <span>Screen Simulator</span>
         </button>
-      </div>
+      </nav>
 
+      {/* Actions (Ghost Buttons without Heavy Backgrounds) */}
       <div className="header-actions">
-        <div className="connection-pill" title={`API: ${ApiService.getBaseUrl()}`}>
+        <div className="connection-pill" title={`Cloud API: ${ApiService.getBaseUrl()}`}>
           <span className={`status-dot ${backendConnected ? 'online' : 'offline'}`} />
-          <span>{backendConnected ? 'Serverless API Ready' : 'Connecting to API...'}</span>
+          <span>{backendConnected ? 'AWS API Ready' : 'Connecting...'}</span>
         </div>
 
-        <button className="btn-secondary" onClick={onRefresh} title="Refresh data">
-          <RefreshCw size={14} />
+        <button className="btn-ghost" onClick={onRefresh} title="Sync data with Amazon S3">
+          <RefreshCw size={13} />
           <span>Sync</span>
         </button>
 
         <button
-          className="btn-secondary"
+          className="btn-ghost btn-ghost-cyan"
           onClick={() => window.open('/screen', '_blank')}
-          title="Open edge-to-edge TV screen in a new window/monitor"
-          style={{ color: 'var(--accent-cyan)' }}
+          title="Open edge-to-edge full TV display"
         >
           <Tv size={14} />
-          <span>Open TV Screen</span>
+          <span>TV Display</span>
         </button>
 
-        <button
-          className="btn-secondary"
-          onClick={onOpenCampaignLibrary}
-          title="Browse all past campaigns staged in Amazon S3 & 1-click re-activate"
-          style={{ color: '#c084fc', borderColor: 'rgba(192, 132, 252, 0.3)' }}
-        >
-          <FolderArchive size={14} />
-          <span>Campaign Library</span>
+        <button className="btn-ghost" onClick={onOpenSimulatorGuide} title="Kiosk Terminal Guide">
+          <Terminal size={13} />
+          <span>CLI</span>
         </button>
 
-        <button className="btn-secondary" onClick={onOpenSimulatorGuide} title="Simulator Guide">
-          <Terminal size={14} />
-          <span>Kiosk CLI</span>
-        </button>
-
-        <button className="btn-secondary" onClick={onOpenRegisterModal}>
+        <button className="btn-ghost" onClick={onOpenRegisterModal}>
           <Plus size={14} />
-          <span>Register Kiosk</span>
+          <span>Register</span>
         </button>
 
         <button
-          className="btn-primary"
-          style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}
+          className="btn-ghost btn-ghost-gold"
           onClick={onOpenCampaignModal}
+          style={{ fontWeight: 700 }}
         >
-          <UploadCloud size={16} />
-          <span>Deploy Campaign to S3</span>
+          <UploadCloud size={15} />
+          <span>+ Deploy Campaign</span>
         </button>
       </div>
     </header>
