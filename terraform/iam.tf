@@ -1,5 +1,5 @@
 resource "aws_iam_role" "lambda_exec" {
-  name = "${var.project_name}-lambda-exec-${var.environment}"
+  name_prefix = "${var.project_name}-lambda-exec-"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -16,7 +16,7 @@ resource "aws_iam_role" "lambda_exec" {
 }
 
 resource "aws_iam_policy" "lambda_s3_policy" {
-  name        = "${var.project_name}-lambda-s3-${var.environment}"
+  name_prefix = "${var.project_name}-lambda-s3-"
   description = "Least privilege S3 access for CloudFleet Lambda"
 
   policy = jsonencode({
@@ -49,7 +49,7 @@ resource "aws_iam_policy" "lambda_s3_policy" {
 }
 
 resource "aws_iam_policy" "lambda_logging_policy" {
-  name        = "${var.project_name}-lambda-logging-${var.environment}"
+  name_prefix = "${var.project_name}-lambda-log-"
   description = "CloudWatch logging permissions for CloudFleet Lambda"
 
   policy = jsonencode({
