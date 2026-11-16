@@ -14,6 +14,17 @@ export class ApiService {
     return API_BASE_URL || window.location.origin;
   }
 
+  static resolveAssetUrl(url?: string): string {
+    if (!url) return '';
+    // If it's a direct private S3 bucket URL, route it through our API Gateway /assets proxy
+    const match = url.match(/\/assets\/([^/?#]+)$/);
+    if (match && url.includes('.s3.') && url.includes('amazonaws.com')) {
+      const apiBase = ApiService.getBaseUrl();
+      return `${apiBase.replace(/\/+$/, '')}/assets/${match[1]}`;
+    }
+    return url;
+  }
+
   static async checkHealth(): Promise<{ status: string; timestamp: string }> {
     const res = await fetch(`${API_BASE_URL}/health`);
     if (!res.ok) throw new Error(`Health check failed with status ${res.status}`);

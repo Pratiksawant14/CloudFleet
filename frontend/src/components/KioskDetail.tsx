@@ -174,7 +174,7 @@ export const KioskDetail: React.FC<KioskDetailProps> = ({ kioskId, onBack, onSho
                   <div style={{ margin: '0.75rem 0', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
                     {campaign.assets[0].mediaType === 'VIDEO' ? (
                       <video
-                        src={campaign.assets[0].url}
+                        src={ApiService.resolveAssetUrl(campaign.assets[0].url)}
                         autoPlay
                         loop
                         muted
@@ -183,7 +183,7 @@ export const KioskDetail: React.FC<KioskDetailProps> = ({ kioskId, onBack, onSho
                       />
                     ) : (
                       <img
-                        src={campaign.assets[0].url}
+                        src={ApiService.resolveAssetUrl(campaign.assets[0].url)}
                         alt={campaign.headline}
                         style={{ width: '100%', maxHeight: '200px', objectFit: 'contain', backgroundColor: 'rgba(0,0,0,0.4)' }}
                         onError={(e) => {

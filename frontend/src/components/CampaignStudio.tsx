@@ -291,7 +291,7 @@ export const CampaignStudio: React.FC<CampaignStudioProps> = ({
               {activeCampaign.assets?.[0]?.url ? (
                 activeCampaign.assets[0].mediaType === 'VIDEO' ? (
                   <video
-                    src={activeCampaign.assets[0].url}
+                    src={ApiService.resolveAssetUrl(activeCampaign.assets[0].url)}
                     autoPlay
                     loop
                     muted
@@ -299,8 +299,11 @@ export const CampaignStudio: React.FC<CampaignStudioProps> = ({
                   />
                 ) : (
                   <img
-                    src={activeCampaign.assets[0].url}
+                    src={ApiService.resolveAssetUrl(activeCampaign.assets[0].url)}
                     alt={activeCampaign.headline}
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 )
@@ -488,8 +491,11 @@ export const CampaignStudio: React.FC<CampaignStudioProps> = ({
                       </div>
                     ) : (
                       <img
-                        src={asset.url}
+                        src={ApiService.resolveAssetUrl(asset.url)}
                         alt={camp.headline}
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     )

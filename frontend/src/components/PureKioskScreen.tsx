@@ -62,14 +62,14 @@ export const PureKioskScreen: React.FC = () => {
     if (!document.fullscreenElement) {
       if (containerRef.current) {
         containerRef.current.requestFullscreen().catch(() => {
-          document.documentElement.requestFullscreen().catch(() => {});
+          document.documentElement.requestFullscreen().catch(() => { });
         });
       } else {
-        document.documentElement.requestFullscreen().catch(() => {});
+        document.documentElement.requestFullscreen().catch(() => { });
       }
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch(() => { });
       setIsFullscreen(false);
     }
   };
