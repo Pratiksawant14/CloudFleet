@@ -26,6 +26,18 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "fleet_storage" {
   }
 }
 
+resource "aws_s3_bucket_cors_configuration" "fleet_storage" {
+  bucket = aws_s3_bucket.fleet_storage.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+}
+
 resource "aws_s3_bucket_policy" "enforce_tls" {
   bucket = aws_s3_bucket.fleet_storage.id
 
