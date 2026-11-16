@@ -132,11 +132,12 @@ export class CampaignService {
       }
     }
 
-    // Sort newest active/published first
+    // Sort newest active/published first. If timestamps match, tie-break by version descending
     campaigns.sort((a, b) => {
       const timeA = new Date(a.publishedAt || a.createdAt).getTime();
       const timeB = new Date(b.publishedAt || b.createdAt).getTime();
-      return timeB - timeA;
+      if (timeB !== timeA) return timeB - timeA;
+      return b.version.localeCompare(a.version, undefined, { numeric: true });
     });
     return campaigns;
   }
@@ -154,9 +155,14 @@ export class CampaignService {
       throw new Error(`Campaign '${campaignId}' not found.`);
     }
 
-    const now = new Date().toISOString();
+    const all = await this.listCampaigns();
+    const maxTime = all.reduce((max, c) => {
+      const t = new Date(c.publishedAt || c.createdAt).getTime();
+      return t > max ? t : max;
+    }, Date.now());
+
     campaign.status = 'PUBLISHED';
-    campaign.publishedAt = now;
+    campaign.publishedAt = new Date(Math.max(Date.now(), maxTime + 1000)).toISOString();
 
     await storage.putObject(manifestKey, campaign);
 

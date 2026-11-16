@@ -142,6 +142,8 @@ describe('CloudFleet Kiosk Management & Sync Service Tests', () => {
       targetKiosks: ['ALL'],
     });
 
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
     const campB = await CampaignService.createCampaign({
       name: 'Summer Splash',
       version: '1.3.0',
@@ -152,6 +154,8 @@ describe('CloudFleet Kiosk Management & Sync Service Tests', () => {
     // campB is newest right now
     const latestBefore = await CampaignService.getLatestCampaignForKiosk('KIOSK-SHOP-001');
     assert.equal(latestBefore?.campaignId, campB.campaignId);
+
+    await new Promise((resolve) => setTimeout(resolve, 30));
 
     // Re-activate older campA
     const activatedA = await CampaignService.activateCampaign(campA.campaignId);
