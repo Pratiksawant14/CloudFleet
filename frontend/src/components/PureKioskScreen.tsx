@@ -94,6 +94,23 @@ export const PureKioskScreen: React.FC = () => {
   const campaign = currentKiosk?.activeCampaign;
   const primaryAsset = campaign?.assets && campaign.assets.length > 0 ? campaign.assets[0] : null;
 
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [primaryAsset?.url]);
+
+  // Resolves direct S3 URLs through API Gateway asset proxy so private bucket permissions don't block display
+  const resolveAssetUrl = (url?: string): string => {
+    if (!url) return '';
+    const match = url.match(/\/assets\/([^/?#]+)$/);
+    if (match && url.includes('.s3.') && url.includes('amazonaws.com')) {
+      const apiBase = ApiService.getBaseUrl();
+      return `${apiBase.replace(/\/+$/, '')}/assets/${match[1]}`;
+    }
+    return url;
+  };
+
   return (
     <div
       ref={containerRef}
@@ -163,14 +180,15 @@ export const PureKioskScreen: React.FC = () => {
           backgroundColor: '#000000',
         }}
       >
-        {primaryAsset?.url ? (
+        {primaryAsset?.url && !imageError ? (
           primaryAsset.mediaType === 'VIDEO' ? (
             <video
-              src={primaryAsset.url}
+              src={resolveAssetUrl(primaryAsset.url)}
               autoPlay
               loop
               muted
               playsInline
+              onError={() => setImageError(true)}
               style={{
                 width: '100%',
                 height: '100%',
@@ -179,8 +197,9 @@ export const PureKioskScreen: React.FC = () => {
             />
           ) : (
             <img
-              src={primaryAsset.url}
+              src={resolveAssetUrl(primaryAsset.url)}
               alt={campaign?.headline}
+              onError={() => setImageError(true)}
               style={{
                 width: '100%',
                 height: '100%',

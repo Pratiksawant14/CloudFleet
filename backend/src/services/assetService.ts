@@ -47,11 +47,9 @@ export class AssetService {
 
     const assetId = `ast_${randomUUID().slice(0, 8)}`;
 
-    const isAwsS3 = !!process.env.S3_BUCKET_NAME && process.env.USE_LOCAL_STORAGE !== 'true';
-    const region = process.env.AWS_REGION || 'us-east-1';
-    const url = isAwsS3
-      ? `https://${process.env.S3_BUCKET_NAME}.s3.${region}.amazonaws.com/${storageKey}`
-      : `${baseUrl.replace(/\/+$/, '')}/assets/${sanitizedFilename}`;
+    // In serverless architecture, media assets are served through the API Gateway endpoint
+    // which securely authenticates and streams objects from S3
+    const url = `${baseUrl.replace(/\/+$/, '')}/assets/${sanitizedFilename}`;
 
     return {
       assetId,
